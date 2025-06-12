@@ -1,4 +1,4 @@
-![CrowdStrike Falcon](/.doc_assets/images/images/cs-logo.png?raw=true)
+![CrowdStrike Falcon](/.doc_assets/images/project/cs-logo.png?raw=true)
 
 # ServiceNow ITSM Helper Foundry App
 

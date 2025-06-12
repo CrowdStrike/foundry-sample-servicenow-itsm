@@ -1,4 +1,4 @@
-![CrowdStrike Falcon](/.doc_assets/images/images/cs-logo.png?raw=true)
+![CrowdStrike Falcon](/.doc_assets/images/project/cs-logo.png?raw=true)
 
 # Repository Support
 
@@ -50,5 +50,5 @@ _MCVE format_ is designed to reduce the potential for encountering confidentiali
 ---
 
 
-<p align="center"><img src="/.doc_assets/images/images/cs-logo-footer.png"><br/><img width="300px" src="/.doc_assets/images/images/adversary-bear.png"></p>
+<p align="center"><img src="/.doc_assets/images/project/cs-logo-footer.png"><br/><img width="300px" src="/.doc_assets/images/project/adversary-bear.png"></p>
 <h3><p align="center">WE STOP BREACHES</p></h3>

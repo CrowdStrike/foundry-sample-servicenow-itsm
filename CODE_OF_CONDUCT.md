@@ -1,4 +1,4 @@
-![CrowdStrike Falcon](/.doc_assets/images/images/cs-logo.png?raw=true)
+![CrowdStrike Falcon](/.doc_assets/images/project/cs-logo.png?raw=true)
 
 [![CrowdStrike Subreddit](https://img.shields.io/badge/-r%2Fcrowdstrike-white?logo=reddit&labelColor=gray&link=https%3A%2F%2Freddit.com%2Fr%2Fcrowdstrike)](https://reddit.com/r/crowdstrike)
 
@@ -135,5 +135,5 @@ https://www.contributor-covenant.org/translations.
  
 ---
 
-<p align="center"><img src="/.doc_assets/images/images/cs-logo-footer.png"><br/><img width="300px" src="/.doc_assets/images/images/alliance-team.png"></p>
+<p align="center"><img src="/.doc_assets/images/project/cs-logo-footer.png"><br/><img width="300px" src="/.doc_assets/images/project/alliance-team.png"></p>
 <h3><p align="center">WE STOP BREACHES</p></h3>
