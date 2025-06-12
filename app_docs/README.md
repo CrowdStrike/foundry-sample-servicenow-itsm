@@ -13,3 +13,8 @@ The ServiceNow ITSM Helper App is a Foundry application that facilitates integra
 ## Authentication Support
 - Basic Authentication
 - OAuth 2.0 Client Credentials grant
+
+## Documentation
+- The source code for this app can be found on GitHub: https://github.com/CrowdStrike/foundry-servicenow-itsm-helper
+- Detailed component overview: https://github.com/CrowdStrike/foundry-servicenow-itsm-helper/blob/main/COMPONENTS.md
+- Use-cases & advanced features: https://github.com/CrowdStrike/foundry-servicenow-itsm-helper/blob/main/USERDOCS.md
