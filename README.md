@@ -1,6 +1,6 @@
-![CrowdStrike Falcon](/.doc_assets/images/project/cs-logo.png?raw=true)
+![CrowdStrike Falcon](/images/project/cs-logo.png?raw=true)
 
-# ServiceNow ITSM Helper Foundry App
+# ServiceNow ITSM Helper sample Foundry app
 
 The ServiceNow ITSM Helper is a community-driven, open source project which serves as an example of an app which can be built using CrowdStrike's Foundry ecosystem. `foundry-sample-servicenow-itsm` is an open source project, not a CrowdStrike product. As such, it carries no formal support, expressed or implied.
 
@@ -114,5 +114,5 @@ For more information about this app:
 
 ---
 
-<p align="center"><img src="/.doc_assets/images/project/cs-logo-footer.png"><br/><img width="300px" src="/.doc_assets/images/project/adversary-goblin-panda.png"></p>
+<p align="center"><img src="/images/project/cs-logo-footer.png"><br/><img width="300px" src="/images/project/adversary-goblin-panda.png"></p>
 <h3><p align="center">WE STOP BREACHES</p></h3>
