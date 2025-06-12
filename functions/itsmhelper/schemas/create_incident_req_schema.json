@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "config_id": {
+      "description": "Config associated with activity when the workflow is triggered.",
+      "title": "Config",
+      "type": "string",
+      "ui:component": "async-select",
+      "x-cs-pivot": {
+        "entity": "plugins.config"
+      }
+    },
+    "entity_id": {
+      "type": "string",
+      "title": "Entity ID"
+    },
+    "assignment_group": {
+      "title": "Assignment group",
+      "type": "string",
+      "x-cs-pivot": {
+        "entity": "plugins.proxy.425a02a359bd49ed92be2075a98898bc.get_groups",
+        "searchable": true
+      }
+    },
+    "category": {
+      "title": "Category",
+      "type": "string",
+      "x-cs-pivot": {
+        "entity": "plugins.proxy.425a02a359bd49ed92be2075a98898bc.get_incident_category"
+      }
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "ui:component": "text-area"
+    },
+    "impact": {
+      "title": "Impact",
+      "type": "string",
+      "x-cs-pivot": {
+        "entity": "plugins.proxy.425a02a359bd49ed92be2075a98898bc.get_task_impact"
+      }
+    },
+    "severity": {
+      "title": "Severity",
+      "type": "string",
+      "x-cs-pivot": {
+        "entity": "plugins.proxy.425a02a359bd49ed92be2075a98898bc.get_incident_severity"
+      }
+    },
+    "short_description": {
+      "type": "string",
+      "title": "Short description",
+      "ui:component": "text-area"
+    },
+    "state": {
+      "title": "State",
+      "type": "string",
+      "x-cs-pivot": {
+        "entity": "plugins.proxy.425a02a359bd49ed92be2075a98898bc.get_incident_state"
+      }
+    },
+    "urgency": {
+      "title": "Urgency",
+      "type": "string",
+      "x-cs-pivot": {
+        "entity": "plugins.proxy.425a02a359bd49ed92be2075a98898bc.get_task_urgency"
+      }
+    },
+    "work_notes": {
+      "title": "Work notes",
+      "type": "string",
+      "ui:component": "text-area"
+    },
+    "custom_fields": {
+      "title": "Custom Fields JSON (advanced)",
+      "description": "ServiceNow custom fields as key-value pairs (e.g., {\"u_custom_field\": \"value\"})",
+      "type": "string",
+      "format": "rawJSON",
+      "pattern": "^(\\s*\\{[\\s\\S]*\\}\\s*|\\$\\{[a-zA-Z0-9_.]+\\})$",
+      "ui:component": "text-area"
+    }
+  },
+  "required": [
+    "config_id",
+    "entity_id",
+    "short_description"
+  ],
+  "x-cs-order": [
+    "config_id",
+    "entity_id",
+    "short_description",
+    "assignment_group",
+    "category",
+    "close_code",
+    "impact",
+    "state",
+    "urgency",
+    "work_notes",
+    "custom_fields"
+  ]
+}

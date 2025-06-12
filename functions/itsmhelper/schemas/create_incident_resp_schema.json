@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "exists": {
+      "type": "boolean",
+      "title": "Exists",
+      "description": "Boolean flag that signals that the entity already exists in the external system"
+    },
+    "ticket_id": {
+      "type": "string",
+      "title": "Ticket ID"
+    },
+    "ticket_type": {
+      "type": "string",
+      "title": "Ticket Type"
+    }
+  },
+  "additionalProperties": false
+}
