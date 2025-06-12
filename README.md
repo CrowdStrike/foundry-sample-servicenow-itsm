@@ -2,7 +2,7 @@
 
 # ServiceNow ITSM Helper Foundry App
 
-The ServiceNow ITSM Helper is a community-driven, open source project which serves as an example of an app which can be built using CrowdStrike's Foundry ecosystem. `foundry-servicenow-itsm-helper` is an open source project, not a CrowdStrike product. As such, it carries no formal support, expressed or implied.
+The ServiceNow ITSM Helper is a community-driven, open source project which serves as an example of an app which can be built using CrowdStrike's Foundry ecosystem. `foundry-sample-servicenow-itsm` is an open source project, not a CrowdStrike product. As such, it carries no formal support, expressed or implied.
 
 This app is one of several App Templates included in Foundry that you can use to jumpstart your development. It comes complete with a set of preconfigured capabilities aligned to its business purpose. Deploy this app from the Templates page with a single click in the Foundry UI, or create an app from this template using the CLI.
 
@@ -62,11 +62,11 @@ Run `foundry version` to verify it's installed correctly.
 
 ## Getting Started
 
-Clone this sample to your local system, or [download as a zip file](https://github.com/CrowdStrike/foundry-servicenow-itsm-helper/archive/refs/heads/main.zip) and import it into Foundry. 
+Clone this sample to your local system, or [download as a zip file](https://github.com/CrowdStrike/foundry-sample-servicenow-itsm/archive/refs/heads/main.zip) and import it into Foundry. 
 
 ```shell
-git clone https://github.com/CrowdStrike/foundry-servicenow-itsm-helper
-cd foundry-servicenow-itsm-helper
+git clone https://github.com/CrowdStrike/foundry-sample-servicenow-itsm
+cd foundry-sample-servicenow-itsm
 ```
 
 Log in to Foundry:
