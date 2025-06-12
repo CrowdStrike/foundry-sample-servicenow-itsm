@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "properties": {
+    "time_bucket": {
+      "type": "string",
+      "title": "Time bucket",
+      "description": "Time bucket for time-based deduping",
+      "x-cs-indexable": true
+    }
+  },
+  "required": [
+    "time_bucket"
+  ],
+  "type": "object",
+  "title": "Dedup Store Record Schema",
+  "description": "Schema for dedup store"
+}

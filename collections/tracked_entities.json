@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "properties": {
+    "internal_entity_id": {
+      "type": "string",
+      "title": "Internal entity id",
+      "description": "Internal system identifier",
+      "x-cs-indexable": true
+    },
+    "internal_entity_type": {
+      "type": "string",
+      "title": "Internal entity type",
+      "description": "Type of the internal entity",
+      "x-cs-indexable": true
+    },
+    "external_entity_id": {
+      "type": "string",
+      "title": "External entity id",
+      "description": "External ITSM ticket identifier",
+      "x-cs-indexable": true
+    },
+    "external_system_id": {
+      "type": "string",
+      "title": "External system id",
+      "description": "Identifier for the external ITSM system",
+      "x-cs-indexable": true
+    },
+    "external_last_known_status": {
+      "type": "string",
+      "title": "External last known status",
+      "description": "Last known status from external system"
+    },
+    "external_last_update_time": {
+      "type": "integer",
+      "title": "External last update time",
+      "description": "Last update timestamp from external system (Unix timestamp)"
+    }
+  },
+  "required": [
+    "internal_entity_id",
+    "external_entity_id",
+    "external_system_id"
+  ],
+  "type": "object",
+  "title": "External Entity Record Schema",
+  "description": "Schema for mapping internal entities to external ITSM system entities"
+}

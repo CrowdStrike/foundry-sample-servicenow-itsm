@@ -1,0 +1,2477 @@
+{
+  "components": {
+    "schemas": {
+      "$config": {
+        "description": "ServiceNow Connection Configuration",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "params": {
+            "properties": {
+              "path": {
+                "properties": {
+                  "base_url": {
+                    "title": "ServiceNow Instance URL",
+                    "type": "string",
+                    "description": "Your ServiceNow instance URL (e.g., https://mycompany.service-now.com)"
+                  }
+                },
+                "required": [
+                  "base_url"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          },
+          "auth": {
+            "oneOf": [
+              {
+                "properties": {
+                  "basic_0": {
+                    "properties": {
+                      "username": {
+                        "minLength": 1,
+                        "title": "Username",
+                        "type": "string"
+                      },
+                      "password": {
+                        "format": "password",
+                        "minLength": 8,
+                        "title": "Password",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "username",
+                      "password"
+                    ],
+                    "type": "object"
+                  },
+                  "type": {
+                    "default": "basic_0",
+                    "enum": [
+                      "basic_0"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "basic_0"
+                ],
+                "type": "object"
+              },
+              {
+                "properties": {
+                  "oauth2_1": {
+                    "properties": {
+                      "client_id": {
+                        "minLength": 1,
+                        "title": "Client ID",
+                        "type": "string"
+                      },
+                      "client_secret": {
+                        "format": "password",
+                        "minLength": 8,
+                        "title": "Client Secret",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "client_id",
+                      "client_secret"
+                    ],
+                    "type": "object"
+                  },
+                  "type": {
+                    "default": "oauth2_1",
+                    "enum": [
+                      "oauth2_1"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "oauth2_1"
+                ],
+                "type": "object"
+              }
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "params",
+          "auth"
+        ],
+        "title": "ServiceNow Connection",
+        "type": "object",
+        "x-cs-order": [
+          "name",
+          "params",
+          "auth"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "http_basic": {
+        "scheme": "basic",
+        "type": "http"
+      },
+      "oauth2": {
+        "bearerFormat": "Bearer",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "/oauth_token.do"
+          }
+        },
+        "type": "oauth2"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "roman.nekhoroshev@crowdstrike.com"
+    },
+    "title": "ServiceNow",
+    "version": ""
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/now/table/cmdb_ci": {
+      "get": {
+        "operationId": "get_ci",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "name,sys_id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sysparm_query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": null,
+        "x-cs-operation-config": {
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/incident": {
+      "get": {
+        "operationId": "get_incident",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": null,
+        "x-cs-operation-config": {
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      },
+      "post": {
+        "operationId": "create_incident",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "assignment_group": {
+                    "title": "Assignment group",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_groups",
+                      "searchable": true
+                    }
+                  },
+                  "category": {
+                    "title": "Category",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_incident_category"
+                    }
+                  },
+                  "close_code": {
+                    "title": "Close code",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_incident_close_code"
+                    }
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "impact": {
+                    "title": "Impact",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_task_impact"
+                    }
+                  },
+                  "severity": {
+                    "title": "Severity",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_incident_severity"
+                    }
+                  },
+                  "short_description": {
+                    "title": "Short description",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "state": {
+                    "title": "State",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_incident_state"
+                    }
+                  },
+                  "urgency": {
+                    "title": "Urgency",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_task_urgency"
+                    }
+                  },
+                  "work_notes": {
+                    "title": "Work notes",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  }
+                },
+                "required": [
+                  "short_description"
+                ],
+                "title": "Json",
+                "type": "object",
+                "x-cs-order": [
+                  "assignment_group",
+                  "description",
+                  "short_description",
+                  "work_notes",
+                  "category",
+                  "state",
+                  "urgency",
+                  "impact",
+                  "severity",
+                  "close_code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "number": {
+                          "title": "Number",
+                          "type": "string"
+                        },
+                        "sys_id": {
+                          "title": "Sys ID",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sys_id"
+                      ],
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ],
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "title": "Location",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Create Incident - Foundry",
+            "expose_to_workflow": true,
+            "name": "Create ServiceNow Incident - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/incident/{sys_id}": {
+      "patch": {
+        "operationId": "update_incident",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          },
+          {
+            "description": "The unique identifier for the incident",
+            "in": "path",
+            "name": "sys_id",
+            "required": true,
+            "schema": {
+              "description": "The unique identifier for the incident",
+              "title": "Sys ID",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "assignment_group": {
+                    "title": "Assignment group",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_groups",
+                      "searchable": true
+                    }
+                  },
+                  "state": {
+                    "title": "State",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_incident_state"
+                    }
+                  },
+                  "work_notes": {
+                    "title": "Work notes",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  }
+                },
+                "title": "Json",
+                "type": "object",
+                "x-cs-order": [
+                  "assignment_group",
+                  "work_notes",
+                  "state"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "number": {
+                          "title": "Number",
+                          "type": "string"
+                        },
+                        "sys_id": {
+                          "title": "Sys ID",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sys_id"
+                      ],
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ],
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "title": "Location",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Update Incident - Foundry",
+            "expose_to_workflow": true,
+            "name": "Update ServiceNow Incident - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/problem": {
+      "post": {
+        "operationId": "create_problem",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "assigned_to": {
+                    "title": "Assigned to",
+                    "type": "string"
+                  },
+                  "assignment_group": {
+                    "title": "Assignment group",
+                    "type": "string"
+                  },
+                  "category": {
+                    "title": "Category",
+                    "type": "string"
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string"
+                  },
+                  "impact": {
+                    "title": "Impact",
+                    "type": "string"
+                  },
+                  "severity": {
+                    "title": "Severity",
+                    "type": "string"
+                  },
+                  "short_description": {
+                    "title": "Short description",
+                    "type": "string"
+                  },
+                  "state": {
+                    "title": "State",
+                    "type": "string"
+                  },
+                  "urgency": {
+                    "title": "Urgency",
+                    "type": "string"
+                  },
+                  "work_notes": {
+                    "title": "Work notes",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "short_description"
+                ],
+                "title": "Json",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": null,
+        "x-cs-operation-config": {
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ],
+          "workflow": {
+            "description": "Create Problem action",
+            "expose_to_workflow": false,
+            "name": "create_problem",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/sn_si_incident": {
+      "get": {
+        "operationId": "get_sn_si_incident",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": null,
+        "x-cs-operation-config": {
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      },
+      "post": {
+        "operationId": "create_sn_si_incident",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "assignment_group": {
+                    "title": "Assignment group",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_groups",
+                      "searchable": true
+                    }
+                  },
+                  "category": {
+                    "title": "Category",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_category"
+                    }
+                  },
+                  "close_code": {
+                    "title": "Close code",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_close_code"
+                    }
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "impact": {
+                    "title": "Impact",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_task_impact"
+                    }
+                  },
+                  "severity": {
+                    "title": "Severity",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_severity"
+                    }
+                  },
+                  "short_description": {
+                    "title": "Short description",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "state": {
+                    "title": "State",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_state"
+                    }
+                  },
+                  "urgency": {
+                    "title": "Urgency",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_task_urgency"
+                    }
+                  },
+                  "work_notes": {
+                    "title": "Work notes",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  }
+                },
+                "required": [
+                  "short_description"
+                ],
+                "title": "Json",
+                "type": "object",
+                "x-cs-order": [
+                  "assignment_group",
+                  "description",
+                  "short_description",
+                  "work_notes",
+                  "category",
+                  "state",
+                  "urgency",
+                  "impact",
+                  "severity",
+                  "close_code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "number": {
+                          "title": "Number",
+                          "type": "string"
+                        },
+                        "sys_id": {
+                          "title": "Sys ID",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sys_id"
+                      ],
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ],
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "title": "Location",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Create SIR Incident - Foundry",
+            "expose_to_workflow": true,
+            "name": "Create ServiceNow SIR Incident - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/sn_si_incident/{sys_id}": {
+      "patch": {
+        "operationId": "update_sn_si_incident",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          },
+          {
+            "description": "The unique identifier for the SIR incident",
+            "in": "path",
+            "name": "sys_id",
+            "required": true,
+            "schema": {
+              "description": "The unique identifier for the SIR incident",
+              "title": "Sys ID",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "assignment_group": {
+                    "title": "Assignment group",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_groups",
+                      "searchable": true
+                    }
+                  },
+                  "category": {
+                    "title": "Category",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_category"
+                    }
+                  },
+                  "close_code": {
+                    "title": "Close code",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_close_code"
+                    }
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "impact": {
+                    "title": "Impact",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_task_impact"
+                    }
+                  },
+                  "severity": {
+                    "title": "Severity",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_severity"
+                    }
+                  },
+                  "short_description": {
+                    "title": "Short description",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "state": {
+                    "title": "State",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sn_si_incident_state"
+                    }
+                  },
+                  "urgency": {
+                    "title": "Urgency",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_task_urgency"
+                    }
+                  },
+                  "work_notes": {
+                    "title": "Work notes",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  }
+                },
+                "title": "Json",
+                "type": "object",
+                "x-cs-order": [
+                  "assignment_group",
+                  "description",
+                  "short_description",
+                  "work_notes",
+                  "category",
+                  "state",
+                  "urgency",
+                  "impact",
+                  "severity",
+                  "close_code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "number": {
+                          "title": "Number",
+                          "type": "string"
+                        },
+                        "sys_id": {
+                          "title": "Sys ID",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sys_id"
+                      ],
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ],
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "title": "Location",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Update SIR Incident - Foundry",
+            "expose_to_workflow": true,
+            "name": "Update ServiceNow SIR Incident - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/sn_ti_m2m_task_observable": {
+      "get": {
+        "operationId": "get_incident_observables",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          },
+          {
+            "description": "Comma-separated list of fields to return",
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "sys_id,task,observable,observable.value,observable.type.value",
+              "description": "Comma-separated list of fields to return",
+              "title": "Sysparm fields",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Query to filter results (e.g. task=\u003cincident_sys_id\u003e)",
+            "in": "query",
+            "name": "sysparm_query",
+            "schema": {
+              "description": "Query to filter results (e.g. task=\u003cincident_sys_id\u003e)",
+              "title": "Sysparm query",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "observable.type.value": {
+                            "title": "Observable Type",
+                            "type": "string"
+                          },
+                          "observable.value": {
+                            "title": "Observable Value",
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "title": "Relationship ID",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "title": "Results",
+                      "type": "array"
+                    }
+                  },
+                  "title": "Incident Observables Response",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Get all observables linked to an incident",
+            "expose_to_workflow": true,
+            "name": "Get ServiceNow SIR Incident Observables - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      },
+      "post": {
+        "operationId": "link_observable_to_sir_incident",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "context": {
+                    "description": "Additional context about this observable's relation to the incident",
+                    "title": "Context",
+                    "type": "string"
+                  },
+                  "lookup_requested": {
+                    "default": true,
+                    "description": "Whether to trigger threat intelligence lookups for this observable",
+                    "title": "Request Intelligence Lookup",
+                    "type": "boolean"
+                  },
+                  "observable": {
+                    "description": "The sys_id of the observable to link to the incident",
+                    "title": "Observable Sys ID",
+                    "type": "string"
+                  },
+                  "task": {
+                    "description": "The sys_id of the SIR incident to link the observable to",
+                    "title": "Incident Sys ID",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "task",
+                  "observable"
+                ],
+                "title": "Link SIR Observable to Incident",
+                "type": "object",
+                "x-cs-order": [
+                  "task",
+                  "observable",
+                  "lookup_requested",
+                  "context"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "observable": {
+                          "properties": {
+                            "value": {
+                              "title": "Observable ID",
+                              "type": "string"
+                            }
+                          },
+                          "title": "Observable",
+                          "type": "object"
+                        },
+                        "sys_id": {
+                          "title": "Relationship Sys ID",
+                          "type": "string"
+                        },
+                        "task": {
+                          "properties": {
+                            "value": {
+                              "title": "Incident ID",
+                              "type": "string"
+                            }
+                          },
+                          "title": "Task",
+                          "type": "object"
+                        }
+                      },
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "title": "Link Response",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Link an observable to a ServiceNow SIR incident",
+            "expose_to_workflow": true,
+            "name": "Link Observable to ServiceNow Incident - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/sn_ti_observable": {
+      "post": {
+        "operationId": "create_sir_observable",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "notes": {
+                    "title": "Notes",
+                    "type": "string",
+                    "ui:component": "text-area"
+                  },
+                  "type": {
+                    "description": "The sys_id of the observable type from sn_ti_observable_type table",
+                    "title": "Observable Type (sys_id)",
+                    "type": "string",
+                    "x-cs-pivot": {
+                      "entity": "plugins.proxy.66b87c27e9b54faa99d1be421e0add2e.get_sir_observable_types",
+                      "searchable": true
+                    }
+                  },
+                  "value": {
+                    "description": "The value of the observable (hostname, IP, etc.)",
+                    "title": "Observable Value",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "value"
+                ],
+                "title": "Observable Creation",
+                "type": "object",
+                "x-cs-order": [
+                  "type",
+                  "value",
+                  "notes"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "sys_id": {
+                          "title": "Observable Sys ID",
+                          "type": "string"
+                        },
+                        "type": {
+                          "properties": {
+                            "value": {
+                              "title": "Type ID",
+                              "type": "string"
+                            }
+                          },
+                          "title": "Observable Type",
+                          "type": "object"
+                        },
+                        "value": {
+                          "title": "Observable Value",
+                          "type": "string"
+                        }
+                      },
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "title": "Create Observable Response",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Create a new observable in ServiceNow SIR",
+            "expose_to_workflow": true,
+            "name": "Create ServiceNow SIR Observable - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/sn_ti_observable/{sys_id}": {
+      "get": {
+        "operationId": "get_sir_observable",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          },
+          {
+            "description": "The unique identifier for the observable",
+            "in": "path",
+            "name": "sys_id",
+            "required": true,
+            "schema": {
+              "description": "The unique identifier for the observable",
+              "title": "Sys ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "finding": {
+                          "title": "Finding",
+                          "type": "string"
+                        },
+                        "sighting_count": {
+                          "title": "Sighting Count",
+                          "type": "string"
+                        },
+                        "sys_id": {
+                          "title": "Sys ID",
+                          "type": "string"
+                        },
+                        "type": {
+                          "properties": {
+                            "value": {
+                              "title": "Type ID",
+                              "type": "string"
+                            }
+                          },
+                          "title": "Type",
+                          "type": "object"
+                        },
+                        "value": {
+                          "title": "Observable Value",
+                          "type": "string"
+                        }
+                      },
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "title": "Observable Details Response",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "timeout_seconds": 30,
+          "workflow": {
+            "description": "Get a specific observable by sys_id",
+            "expose_to_workflow": true,
+            "name": "Get ServiceNow SIR Observable - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    },
+    "/api/now/table/sn_ti_observable_type": {
+      "get": {
+        "operationId": "get_sir_observable_types",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Accept",
+            "schema": {
+              "default": "application/json",
+              "title": "Accept",
+              "type": "string",
+              "x-cs-ui": {
+                "skip": true
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "name,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "name",
+            "id_field": "sys_id",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice": {
+      "get": {
+        "operationId": "get_field_choices",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "element",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "default": "incident",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=category\u0026name=incident": {
+      "get": {
+        "operationId": "get_incident_category",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=category\u0026name=sn_si_incident": {
+      "get": {
+        "operationId": "get_sn_si_incident_category",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=close_code\u0026name=incident": {
+      "get": {
+        "operationId": "get_incident_close_code",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=close_code\u0026name=sn_si_incident": {
+      "get": {
+        "operationId": "get_sn_si_incident_close_code",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=impact\u0026name=task": {
+      "get": {
+        "operationId": "get_task_impact",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "healthcheck": {
+            "enabled": true
+          },
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=incident_state\u0026name=incident": {
+      "get": {
+        "operationId": "get_incident_state",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=severity\u0026name=incident": {
+      "get": {
+        "operationId": "get_incident_severity",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=severity\u0026name=sn_si_incident": {
+      "get": {
+        "operationId": "get_sn_si_incident_severity",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=state\u0026name=sn_si_incident": {
+      "get": {
+        "operationId": "get_sn_si_incident_state",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_choice?element=urgency\u0026name=task": {
+      "get": {
+        "operationId": "get_task_urgency",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "label,value,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "label",
+            "id_field": "value",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_user": {
+      "get": {
+        "operationId": "get_users",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "name,sys_id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "sys_id": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "sys_id"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "name",
+            "id_field": "sys_id",
+            "iterable_path": "result"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/table/sys_user_group": {
+      "get": {
+        "operationId": "get_groups",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sysparm_fields",
+            "schema": {
+              "default": "sys_id,name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sysparm_limit",
+            "schema": {
+              "default": 1000,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sysparm_query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": null,
+        "x-cs-operation-config": {
+          "autocomplete": {
+            "display_field": "name",
+            "id_field": "sys_id",
+            "iterable_path": "result",
+            "search_field": "params.query.sysparm_query",
+            "search_format": "nameLIKE~search_text~^ORsys_id=~search_text~"
+          },
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ]
+        }
+      }
+    },
+    "/api/now/v1/attachment/upload": {
+      "post": {
+        "description": "Upload a file",
+        "operationId": "create_attachment_multipart",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "table_name": {
+                    "default": "incident",
+                    "description": "Name of the table to which you want to attach the file",
+                    "enum": [
+                      "incident",
+                      "sn_si_incident"
+                    ],
+                    "title": "Table Name",
+                    "type": "string"
+                  },
+                  "table_sys_id": {
+                    "description": "Sys_id of the record on the specified table to which you want to attach the file",
+                    "title": "Table Sys ID",
+                    "type": "string"
+                  },
+                  "uploadFile": {
+                    "description": "File to be uploaded",
+                    "format": "downloadableFile",
+                    "title": "Attachment",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "table_name",
+                  "table_sys_id",
+                  "uploadFile"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "average_image_color": {
+                          "title": "Average image color",
+                          "type": "string"
+                        },
+                        "compressed": {
+                          "title": "Compressed",
+                          "type": "string"
+                        },
+                        "content_type": {
+                          "title": "Content type",
+                          "type": "string"
+                        },
+                        "created_by_name": {
+                          "title": "Created by name",
+                          "type": "string"
+                        },
+                        "download_link": {
+                          "title": "Download link",
+                          "type": "string"
+                        },
+                        "file_name": {
+                          "title": "File name",
+                          "type": "string"
+                        },
+                        "image_height": {
+                          "title": "Image height",
+                          "type": "string"
+                        },
+                        "image_width": {
+                          "title": "Image width",
+                          "type": "string"
+                        },
+                        "size_bytes": {
+                          "title": "Size bytes",
+                          "type": "string"
+                        },
+                        "size_compressed": {
+                          "title": "Size compressed",
+                          "type": "string"
+                        },
+                        "sys_created_by": {
+                          "title": "Sys created by",
+                          "type": "string"
+                        },
+                        "sys_created_on": {
+                          "title": "Sys created on",
+                          "type": "string"
+                        },
+                        "sys_id": {
+                          "title": "Sys ID",
+                          "type": "string"
+                        },
+                        "sys_mod_count": {
+                          "title": "Sys mod count",
+                          "type": "string"
+                        },
+                        "sys_tags": {
+                          "title": "Sys tags",
+                          "type": "string"
+                        },
+                        "sys_updated_by": {
+                          "title": "Sys updated by",
+                          "type": "string"
+                        },
+                        "sys_updated_on": {
+                          "title": "Sys updated on",
+                          "type": "string"
+                        },
+                        "table_name": {
+                          "title": "Table name",
+                          "type": "string"
+                        },
+                        "table_sys_id": {
+                          "title": "Table sys ID",
+                          "type": "string"
+                        },
+                        "updated_by_name": {
+                          "title": "Updated by name",
+                          "type": "string"
+                        }
+                      },
+                      "title": "Result",
+                      "type": "object"
+                    }
+                  },
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "x-cs-operation-config": {
+          "notification_status_codes": [
+            400,
+            401,
+            403
+          ],
+          "workflow": {
+            "description": "Add a file attachment to a ServiceNow incident",
+            "expose_to_workflow": true,
+            "name": "Create ServiceNow attachment - Foundry",
+            "system": false,
+            "tags": [
+              "ServiceNow Foundry"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    { "http_basic": [] },
+    { "oauth2": [] }
+  ],
+  "servers": [
+    {
+      "url": "{base_url}",
+      "variables": {
+        "base_url": {
+          "description": "the \"base_url\" variable is replaced with a dynamic value at execution time"
+        }
+      }
+    }
+  ],
+  "x-cs-display-templates": {
+    "config": {
+      "template": {
+        "version": "0.3.1",
+        "cards": [
+          [
+            "form/input/mobiledoc",
+            {
+              "label": "Configuration name",
+              "name": "name",
+              "payloadVersion": "v1"
+            }
+          ],
+          [
+            "form/input/mobiledoc",
+            {
+              "label": "ServiceNow Instance URL",
+              "name": "params.path.base_url",
+              "payloadVersion": "v1",
+              "helperText": "Your ServiceNow instance URL (e.g., https://mycompany.service-now.com)"
+            }
+          ],
+          [
+            "form/condition-group/mobiledoc",
+            {
+              "control": {
+                "mobiledoc": {
+                  "cards": [
+                    [
+                      "form/select/mobiledoc",
+                      {
+                        "keyField": "id",
+                        "label": "Authentication Type",
+                        "labelField": "label",
+                        "name": "auth.type",
+                        "options": [
+                          {
+                            "id": "basic_0",
+                            "label": "Basic Authentication"
+                          },
+                          {
+                            "id": "oauth2_1",
+                            "label": "OAuth 2.0 Client Credentials"
+                          }
+                        ],
+                        "payloadVersion": "v1",
+                        "searchEnabled": false
+                      }
+                    ]
+                  ],
+                  "sections": [
+                    [
+                      10,
+                      0
+                    ]
+                  ],
+                  "version": "0.3.1"
+                }
+              },
+              "dependentFieldName": "auth.type",
+              "dependents": {
+                "basic_0": {
+                  "mobiledoc": {
+                    "cards": [
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Username",
+                          "name": "auth.basic_0.username",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Password",
+                          "name": "auth.basic_0.password",
+                          "payloadVersion": "v1",
+                          "type": "password"
+                        }
+                      ]
+                    ],
+                    "sections": [
+                      [
+                        10,
+                        0
+                      ],
+                      [
+                        10,
+                        1
+                      ]
+                    ],
+                    "version": "0.3.1"
+                  }
+                },
+                "oauth2_1": {
+                  "mobiledoc": {
+                    "cards": [
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Client ID",
+                          "name": "auth.oauth2_1.client_id",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Client Secret",
+                          "name": "auth.oauth2_1.client_secret",
+                          "payloadVersion": "v1",
+                          "type": "password"
+                        }
+                      ]
+                    ],
+                    "sections": [
+                      [
+                        10,
+                        0
+                      ],
+                      [
+                        10,
+                        1
+                      ]
+                    ],
+                    "version": "0.3.1"
+                  }
+                }
+              }
+            }
+          ]
+        ],
+        "sections": [
+          [
+            10,
+            0
+          ],
+          [
+            10,
+            1
+          ],
+          [
+            10,
+            2
+          ]
+        ]
+      },
+      "transformation": ""
+    }
+  },
+  "x-cs-multi-instance": true
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "properties": {
+    "internal_entity_id": {
+      "type": "string",
+      "title": "Internal entity id",
+      "description": "Internal system identifier (e.g., CVE ID)"
+    },
+    "dedup_obj_type": {
+      "type": "string",
+      "title": "Dedup object type",
+      "description": "Type of object provided in Dedup Object ID",
+      "enum": ["Host", "User"]
+    },
+    "dedup_obj_id": {
+      "type": "string",
+      "title": "Dedup object ID",
+      "description": "ID specific object for deduplication"
+    },
+    "time_bucket": {
+      "type": "string",
+      "title": "Time bucket",
+      "description": "Time bucket for time-based deduping",
+      "x-cs-indexable": true,
+      "enum": ["forever", "5 minutes", "30 minutes"],
+      "default": "forever"
+    }
+  },
+  "required": [
+    "internal_entity_id",
+    "dedup_obj_type",
+    "dedup_obj_id",
+    "time_bucket"
+  ],
+  "x-cs-order": [
+    "internal_entity_id",
+    "dedup_obj_type",
+    "dedup_obj_id",
+    "time_bucket"
+  ],
+  "type": "object",
+  "title": "Throttle Function Request Schema",
+  "additionalProperties": false
+}

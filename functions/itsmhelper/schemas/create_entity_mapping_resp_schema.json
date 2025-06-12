@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Entity Mapping",
+  "description": "Maps external entity identifiers with optional error information",
+  "type": "object",
+  "properties": {
+    "internal_entity_id": {
+      "title": "Internal Entity ID",
+      "description": "Unique identifier for the entity in the internal system",
+      "type": "string"
+    },
+    "external_entity_id": {
+      "title": "External Entity ID",
+      "description": "Unique identifier for the entity in an external system",
+      "type": "string"
+    },
+    "external_system_id": {
+      "title": "External System ID",
+      "description": "Identifier for the external system",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
