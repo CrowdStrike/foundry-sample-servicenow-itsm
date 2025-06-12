@@ -55,7 +55,7 @@ The following ACLs must be created for the User Role from Step 1.
 
 The ServiceNow ITSM Helper enables one-way synchronization of alerts from CrowdStrike to ServiceNow. When a security event is detected in CrowdStrike, the app can automatically create a corresponding ticket in ServiceNow, ensuring that security incidents are properly tracked in your ITSM system.
 
-<img alt="Alert creation high-level workflow diagram" src=".doc_assets/images/userdocs/alert_flow_highlevel_diagram.png" width="" height="400"/>
+<img alt="Alert creation high-level workflow diagram" src="images/userdocs/alert_flow_highlevel_diagram.png" width="" height="400"/>
 
 The workflow works as follows:
 
@@ -71,7 +71,7 @@ The workflow works as follows:
 1. **Configure ServiceNow API Integration**:
    - Ensure the ServiceNow API integration is properly configured in your Foundry environment
    - Verify that the integration has the necessary credentials and permissions
-   <br><img alt="ServiceNow API Integration Configuration" src=".doc_assets/images/app_settings.png" width="900"/><br>
+   <br><img alt="ServiceNow API Integration Configuration" src="images/userdocs/app_settings.png" width="900"/><br>
 
 2. **Set Up Workflows**:
    - Create a workflow in Falcon Fusion that triggers on the desired security events
@@ -82,7 +82,7 @@ The workflow works as follows:
      - `short_description`: A brief description of the incident
      - Other optional fields like category, assignment group, etc.
 
-   <img alt="Alert creation workflow configuration" width="800" src=".doc_assets/images/userdocs/oneway_alert_sync_create.png"/>
+   <img alt="Alert creation workflow configuration" width="800" src="images/userdocs/oneway_alert_sync_create.png"/>
 
 #### Required Workflows
 
@@ -113,11 +113,11 @@ For existing alerts, a completely separate workflow from alert creation is used.
 
 1. Create a workflow in Falcon Fusion that triggers on Audit Event related to tracked entities (e.g., Alerts)
 2. Using the "Check If External Entity Exists" action to get the ticket ID related to this entity (e.g., Alert)
-   <br><img alt="Alert update trigger workflow view" src=".doc_assets/images/oneway_alert_sync_update_trigger_view.png" width="800"/>
+   <br><img alt="Alert update trigger workflow view" src="images/userdocs/oneway_alert_sync_update_trigger_view.png" width="800"/>
 3. Using the ServiceNow API integration to update the ticket with the new information
-   <br><img alt="ServiceNow API action for updating ticket" src=".doc_assets/images/oneway_alert_sync_update_close_action.png" width="800"/><br>
+   <br><img alt="ServiceNow API action for updating ticket" src="images/userdocs/oneway_alert_sync_update_close_action.png" width="800"/><br>
 4. The complete alert update workflow overview:
-   <br><img alt="Complete alert update workflow overview" src=".doc_assets/images/oneway_alert_sync_update_overview.png" width="1200"/><br>
+   <br><img alt="Complete alert update workflow overview" src="images/userdocs/oneway_alert_sync_update_overview.png" width="1200"/><br>
 
 
 
@@ -137,7 +137,7 @@ The app uses entity mapping to associate CrowdStrike entities with ServiceNow ti
 2. If a ticket exists, using that ticket ID for all related entities
 3. Creating entity mappings for each additional entity to the same ticket
 
-<img alt="Ticket container approach diagram showing multiple entities mapped to a single ticket" height="600" src=".doc_assets/images/userdocs/ticket_container_approach_highlevel_diagram.png"/>
+<img alt="Ticket container approach diagram showing multiple entities mapped to a single ticket" height="600" src="images/userdocs/ticket_container_approach_highlevel_diagram.png"/>
 
 #### Configuration Steps
 
@@ -197,11 +197,11 @@ Example workflow logic:
 
 Complete workflow example with throttling implementation:
 
-<img alt="Throttling workflow example with 5-minute bucketing" src=".doc_assets/images/userdocs/throttle_dedup_by_entity_with_5min_bucketing.png" width="800"/>
+<img alt="Throttling workflow example with 5-minute bucketing" src="images/userdocs/throttle_dedup_by_entity_with_5min_bucketing.png" width="800"/>
 
 #### Internal bucketing logic
 
-<img alt="Throttle deduplication logic diagram" height="600" src=".doc_assets/images/userdocs/throttle_dedup_logic.png"/>
+<img alt="Throttle deduplication logic diagram" height="600" src="images/userdocs/throttle_dedup_logic.png"/>
 
 
 ## Advanced Configuration / FAQ
@@ -228,7 +228,7 @@ To implement dependent fields (like category/subcategory):
 
 #### Sample Configuration
 
-<img alt="Hierarchical Categories UI" height="300" src=".doc_assets/images/userdocs/hierarchical_categories_ui.png"/>
+<img alt="Hierarchical Categories UI" height="300" src="images/userdocs/hierarchical_categories_ui.png"/>
 
 *Figure 8: ServiceNow UI showing hierarchical category fields in action*
 
