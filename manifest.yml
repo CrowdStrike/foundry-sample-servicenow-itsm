@@ -1,6 +1,6 @@
 name: ServiceNow ITSM Helper App
-description: ""
-logo: images/falcon-logo.png
+description: "Enable seamless integration between CrowdStrike and ServiceNow ITSM by automatically creating and updating ServiceNow tickets based on CrowdStrike alerts"
+logo: images/project/servicenow_logo.png
 vendor: ""
 vendor_products: []
 use_case: ""
