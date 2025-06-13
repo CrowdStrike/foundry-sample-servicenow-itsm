@@ -1,4 +1,4 @@
-app_id: 913cb4ace6964d41a82b434a59f6d76a
+app_id: ""
 name: ServiceNow ITSM Helper App
 description: ""
 logo: images/falcon-logo.png
@@ -14,7 +14,7 @@ ui:
     dashboards: {}
     navigation: {}
 api_integrations:
-    - id: 425a02a359bd49ed92be2075a98898bc
+    - id: ""
       name: servicenow-foundry
       description: ""
       path: api-integrations/servicenow.json
@@ -41,7 +41,7 @@ auth:
     permissions: {}
     roles: []
 functions:
-    - id: aff9a77fd6a845bf89d0a581410756dc
+    - id: ""
       name: itsm_helper
       config: null
       description: Helper function that check if there is an external entity for the internal entity ID provided
@@ -56,11 +56,10 @@ functions:
           request_schema: schemas/check_if_ext_entity_exists_req_schema.json
           response_schema: schemas/check_if_ext_entity_exists_resp_schema.json
           workflow_integration:
-            id: 61143666563e4735a79cb423c34bcdb4
+            id: ""
             disruptive: false
             system_action: false
             tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
                 - ServiceNow Foundry
           permissions: []
         - name: ITSM Helper - Entities - Establish mapping
@@ -71,11 +70,10 @@ functions:
           request_schema: schemas/create_entity_mapping_req_schema.json
           response_schema: schemas/create_entity_mapping_resp_schema.json
           workflow_integration:
-            id: 018e9b3fc2324b78af5d1352d058d7cf
+            id: ""
             disruptive: false
             system_action: false
             tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
                 - ServiceNow Foundry
           permissions: []
         - name: ITSM Helper - Create Incident
@@ -86,11 +84,10 @@ functions:
           request_schema: schemas/create_incident_req_schema.json
           response_schema: schemas/create_incident_resp_schema.json
           workflow_integration:
-            id: 0c7b883a19594810934f99b6def5246b
+            id: ""
             disruptive: false
             system_action: false
             tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
                 - ServiceNow Foundry
           permissions: []
         - name: ITSM Helper - Create SIR Incident
@@ -101,11 +98,10 @@ functions:
           request_schema: schemas/create_sir_incident_req_schema.json
           response_schema: schemas/create_sir_incident_resp_schema.json
           workflow_integration:
-            id: e98c73fca1394b0ebd8981dcc4c65c74
+            id: ""
             disruptive: false
             system_action: false
             tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
                 - ServiceNow Foundry
           permissions: []
         - name: ITSM Helper - Throttle
@@ -116,11 +112,10 @@ functions:
           request_schema: schemas/throttle_req_schema.json
           response_schema: schemas/throttle_resp_schema.json
           workflow_integration:
-            id: 27aeedcb470e4cfda776d140dc5626e0
+            id: ""
             disruptive: false
             system_action: false
             tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
                 - ServiceNow Foundry
           permissions: []
       language: go
@@ -130,6 +125,6 @@ logscale:
     saved_searches: []
 lookup_files: []
 docs:
-    id: b5d6e97c16a245aa86fb07a42552ba70
+    id: ""
     path: app_docs
     entrypoint: README.md
