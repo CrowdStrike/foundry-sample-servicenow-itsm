@@ -1,135 +1,121 @@
-app_id: 913cb4ace6964d41a82b434a59f6d76a
 name: ServiceNow ITSM Helper App
-description: ""
-logo: images/falcon-logo.png
+description: "Enable seamless integration between CrowdStrike and ServiceNow ITSM by automatically creating and updating ServiceNow tickets based on CrowdStrike alerts"
+logo: images/project/servicenow_logo.png
 vendor: ""
 vendor_products: []
 use_case: ""
 manifest_version: "2023-05-09"
 ignored: []
 ui:
-    homepage: ""
-    extensions: []
-    pages: {}
-    dashboards: {}
-    navigation: {}
+  homepage: ""
+  extensions: []
+  pages: {}
+  dashboards: {}
+  navigation: {}
 api_integrations:
-    - id: 425a02a359bd49ed92be2075a98898bc
-      name: servicenow-foundry
-      description: ""
-      path: api-integrations/servicenow.json
+  - name: servicenow-foundry
+    description: ""
+    path: api-integrations/servicenow.json
 rtr_scripts: []
 collections:
-    - name: tracked_entities
-      description: ""
-      schema: collections/tracked_entities.json
-      permissions: []
-      workflow_integration: null
-    - name: dedup_store
-      description: ""
-      schema: collections/dedup_store.json
-      permissions: []
-      workflow_integration: null
+  - name: tracked_entities
+    description: ""
+    schema: collections/tracked_entities.json
+    permissions: []
+    workflow_integration: null
+  - name: dedup_store
+    description: ""
+    schema: collections/dedup_store.json
+    permissions: []
+    workflow_integration: null
 auth:
-    scopes:
-        - api-integrations:read
-        - api-integrations:write
-        - custom-storage:read
-        - custom-storage:write
-        - workflow:read
-        - workflow:write
-    permissions: {}
-    roles: []
+  scopes:
+    - api-integrations:read
+    - api-integrations:write
+    - custom-storage:read
+    - custom-storage:write
+    - workflow:read
+    - workflow:write
+  permissions: {}
+  roles: []
 functions:
-    - id: aff9a77fd6a845bf89d0a581410756dc
-      name: itsm_helper
-      config: null
-      description: Helper function that check if there is an external entity for the internal entity ID provided
-      path: functions/itsmhelper
-      environment_variables: {}
-      handlers:
-        - name: ITSM Helper - Entities - Check if external entity exists
-          description: Helper function that check if there is an external entity for the internal entity ID provided
-          method: POST
-          api_path: /check_if_ext_entity_exists
-          payload_type: ""
-          request_schema: schemas/check_if_ext_entity_exists_req_schema.json
-          response_schema: schemas/check_if_ext_entity_exists_resp_schema.json
-          workflow_integration:
-            id: 61143666563e4735a79cb423c34bcdb4
-            disruptive: false
-            system_action: false
-            tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
-                - ServiceNow Foundry
-          permissions: []
-        - name: ITSM Helper - Entities - Establish mapping
-          description: Helper function that establishes a mapping between an internal and an external entities
-          method: POST
-          api_path: /create_entity_mapping
-          payload_type: ""
-          request_schema: schemas/create_entity_mapping_req_schema.json
-          response_schema: schemas/create_entity_mapping_resp_schema.json
-          workflow_integration:
-            id: 018e9b3fc2324b78af5d1352d058d7cf
-            disruptive: false
-            system_action: false
-            tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
-                - ServiceNow Foundry
-          permissions: []
-        - name: ITSM Helper - Create Incident
-          description: Helper function that creates an incident in the ServiceNow ITSM system
-          method: POST
-          api_path: /create_incident
-          payload_type: ""
-          request_schema: schemas/create_incident_req_schema.json
-          response_schema: schemas/create_incident_resp_schema.json
-          workflow_integration:
-            id: 0c7b883a19594810934f99b6def5246b
-            disruptive: false
-            system_action: false
-            tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
-                - ServiceNow Foundry
-          permissions: []
-        - name: ITSM Helper - Create SIR Incident
-          description: Helper function that creates an SIR incident in the ServiceNow ITSM system
-          method: POST
-          api_path: /create_sir_incident
-          payload_type: ""
-          request_schema: schemas/create_sir_incident_req_schema.json
-          response_schema: schemas/create_sir_incident_resp_schema.json
-          workflow_integration:
-            id: e98c73fca1394b0ebd8981dcc4c65c74
-            disruptive: false
-            system_action: false
-            tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
-                - ServiceNow Foundry
-          permissions: []
-        - name: ITSM Helper - Throttle
-          description: Helper function that throttles the flow of updates to downstream workflow nodes
-          method: POST
-          api_path: /throttle
-          payload_type: ""
-          request_schema: schemas/throttle_req_schema.json
-          response_schema: schemas/throttle_resp_schema.json
-          workflow_integration:
-            id: 27aeedcb470e4cfda776d140dc5626e0
-            disruptive: false
-            system_action: false
-            tags:
-                - 913cb4ace6964d41a82b434a59f6d76a
-                - ServiceNow Foundry
-          permissions: []
-      language: go
+  - name: itsm_helper
+    config: null
+    description: Helper function that check if there is an external entity for the internal entity ID provided
+    path: functions/itsmhelper
+    environment_variables: {}
+    handlers:
+      - name: ITSM Helper - Entities - Check if external entity exists
+        description: Helper function that check if there is an external entity for the internal entity ID provided
+        method: POST
+        api_path: /check_if_ext_entity_exists
+        payload_type: ""
+        request_schema: schemas/check_if_ext_entity_exists_req_schema.json
+        response_schema: schemas/check_if_ext_entity_exists_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
+      - name: ITSM Helper - Entities - Establish mapping
+        description: Helper function that establishes a mapping between an internal and an external entities
+        method: POST
+        api_path: /create_entity_mapping
+        payload_type: ""
+        request_schema: schemas/create_entity_mapping_req_schema.json
+        response_schema: schemas/create_entity_mapping_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
+      - name: ITSM Helper - Create Incident
+        description: Helper function that creates an incident in the ServiceNow ITSM system
+        method: POST
+        api_path: /create_incident
+        payload_type: ""
+        request_schema: schemas/create_incident_req_schema.json
+        response_schema: schemas/create_incident_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
+      - name: ITSM Helper - Create SIR Incident
+        description: Helper function that creates an SIR incident in the ServiceNow ITSM system
+        method: POST
+        api_path: /create_sir_incident
+        payload_type: ""
+        request_schema: schemas/create_sir_incident_req_schema.json
+        response_schema: schemas/create_sir_incident_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
+      - name: ITSM Helper - Throttle
+        description: Helper function that throttles the flow of updates to downstream workflow nodes
+        method: POST
+        api_path: /throttle
+        payload_type: ""
+        request_schema: schemas/throttle_req_schema.json
+        response_schema: schemas/throttle_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
+    language: go
 workflows: []
 parsers: []
 logscale:
-    saved_searches: []
+  saved_searches: []
 lookup_files: []
 docs:
-    id: b5d6e97c16a245aa86fb07a42552ba70
-    path: app_docs
-    entrypoint: README.md
+  path: app_docs
+  entrypoint: README.md

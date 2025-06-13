@@ -6,7 +6,6 @@
 **Name**: `ITSM Helper - Entities - Check if external entity exists`  
 **Handler**: `HandleCheckIfExtEntityExists`  
 **API Path**: `/check_if_ext_entity_exists`  
-**Workflow Integration ID**: `61143666563e4735a79cb423c34bcdb4`
 
 **Description**:  
 This action checks if an external entity mapping exists for a given internal entity ID in a specified external system. It's primarily used to determine if a ServiceNow ticket already exists for a specific CrowdStrike entity.
@@ -50,7 +49,6 @@ This action creates or updates a mapping between internal CrowdStrike entities a
 **Name**: `ITSM Helper - Create Incident`  
 **Handler**: `HandleCreateIncident`  
 **API Path**: `/create_incident`  
-**Workflow Integration ID**: `0c7b883a19594810934f99b6def5246b`
 
 **Description**:  
 This action creates a standard incident in ServiceNow. It first checks if a ticket already exists for the entity, and if not, creates a new one using the ServiceNow API integration. It then stores the mapping between the CrowdStrike entity and the ServiceNow ticket.
@@ -82,7 +80,6 @@ This action creates a standard incident in ServiceNow. It first checks if a tick
 **Name**: `ITSM Helper - Create SIR Incident`  
 **Handler**: `HandleCreateSIRIncident`  
 **API Path**: `/create_sir_incident`  
-**Workflow Integration ID**: `e98c73fca1394b0ebd8981dcc4c65c74`
 
 **Description**:  
 This action creates a Security Incident Response (SIR) incident in ServiceNow. It functions similarly to the standard incident creation handler but creates a different type of ticket (sn_si_incident) and uses a different external system ID for tracking.
@@ -101,7 +98,6 @@ This action creates a Security Incident Response (SIR) incident in ServiceNow. I
 **Name**: `ITSM Helper - Throttle`  
 **Handler**: `HandleThrottle`  
 **API Path**: `/throttle`  
-**Workflow Integration ID**: `27aeedcb470e4cfda776d140dc5626e0`
 
 **Description**:  
 This action provides throttling functionality to control the flow of updates in workflows. It checks if an action should be allowed based on deduplication logic, helping to prevent duplicate tickets or actions within a specified time bucket.
@@ -121,9 +117,9 @@ This action provides throttling functionality to control the flow of updates in 
 
 ## Workflow Integration
 
-All actions are part of a single function called `itsm_helper` with ID `aff9a77fd6a845bf89d0a581410756dc`. This function is exposed to Workflow through the integrations listed above.
+All actions are part of a single function called `itsm_helper`. This function is exposed to Workflow through the integrations listed above.
 
-The ServiceNow ITSM Helper App uses the ServiceNow API integration (ID: `425a02a359bd49ed92be2075a98898bc`, defined in [api-integrations/servicenow.json](api-integrations/servicenow.json)) to communicate with ServiceNow. It supports two main operations:
+The ServiceNow ITSM Helper App uses the ServiceNow API integration (Name: `servicenow-foundry`, defined in [api-integrations/servicenow.json](api-integrations/servicenow.json)) to communicate with ServiceNow. It supports two main operations:
 - `create_incident`: Creates a standard incident in ServiceNow
 - `create_sn_si_incident`: Creates a Security Incident Response (SIR) incident in ServiceNow
 
