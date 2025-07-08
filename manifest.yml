@@ -1,5 +1,5 @@
 name: ServiceNow ITSM and SIR App
-description: "Enable seamless integration between CrowdStrike and ServiceNow ITSM by automatically creating and updating ServiceNow tickets based on CrowdStrike alerts"
+description: "The ServiceNow Enhanced ITSM App for Foundry allows users to create and manage incidents in ServiceNow, for instance, closing ServiceNow incidents when a CrowdStrike detection is closed. The app also provides functionality to track entity mappings between systems, and implements throttling mechanisms to control workflow execution. This app supports ServiceNow and ServiceNow SIR modules. Upon app deployments, please read the README and USERDOCS to learn how to customize the app to your requirements."
 logo: images/project/servicenow_logo.png
 vendor: "ServiceNow"
 vendor_products: []
