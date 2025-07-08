@@ -1,4 +1,4 @@
-name: ServiceNow ITSM Helper App
+name: ServiceNow ITSM and SIR App
 description: "Enable seamless integration between CrowdStrike and ServiceNow ITSM by automatically creating and updating ServiceNow tickets based on CrowdStrike alerts"
 logo: images/project/servicenow_logo.png
 vendor: ""

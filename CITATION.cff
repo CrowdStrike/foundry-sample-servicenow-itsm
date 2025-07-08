@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: 'CrowdStrike Foundry Sample App - ServiceNow ITSM Helper'
+title: 'CrowdStrike Foundry Sample App - ServiceNow ITSM and SIR'
 message: >-
   If you use this software, and wish to cite the origins,
   please use metadata from this file.
@@ -12,7 +12,7 @@ repository-code: 'https://github.com/CrowdStrike/foundry-sample-servicenow-itsm'
 url: 'https://www.crowdstrike.com'
 repository-artifact: 'https://pkg.go.dev/github.com/crowdstrike/foundry-sample-servicenow-itsm'
 abstract: >-
-  The CrowdStrike Foundry Sample App - ServiceNow ITSM Helper
+  The CrowdStrike Foundry Sample App - ServiceNow ITSM and SIR
   is a community-driven, open source project designed
   to illustrate creating apps with CrowdStrike Foundry.
 keywords:

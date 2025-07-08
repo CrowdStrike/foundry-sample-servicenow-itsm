@@ -1,6 +1,6 @@
-## ServiceNow ITSM Helper Foundry App
+## ServiceNow ITSM and SIR Foundry App
 
-The ServiceNow ITSM Helper App is a Foundry application that facilitates integration between CrowdStrike and ServiceNow ITSM systems. It provides functionality for creating and managing incidents in ServiceNow, tracking entity mappings between systems, and implementing throttling mechanisms to control workflow execution.
+The ServiceNow ITSM and SIR App is a Foundry application that facilitates integration between CrowdStrike and ServiceNow ITSM systems. It provides functionality for creating and managing incidents in ServiceNow, tracking entity mappings between systems, and implementing throttling mechanisms to control workflow execution.
 
 ## Key Capabilities
 - **One-Way Alert Synchronization**: Provides building blocks to automatically create/update ServiceNow incidents from CrowdStrike alerts

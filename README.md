@@ -1,8 +1,8 @@
 ![CrowdStrike Falcon](/images/project/cs-logo.png?raw=true)
 
-# ServiceNow ITSM Helper sample Foundry app
+# ServiceNow ITSM and SIR sample Foundry app
 
-The ServiceNow ITSM Helper sample Foundry app is a community-driven, open source project which serves as an example of an app which can be built using CrowdStrike's Foundry ecosystem. `foundry-sample-servicenow-itsm` is an open source project, not a CrowdStrike product. As such, it carries no formal support, expressed or implied.
+The ServiceNow ITSM and SIR sample Foundry app is a community-driven, open source project which serves as an example of an app which can be built using CrowdStrike's Foundry ecosystem. `foundry-sample-servicenow-itsm` is an open source project, not a CrowdStrike product. As such, it carries no formal support, expressed or implied.
 
 This app is one of several App Templates included in Foundry that you can use to jumpstart your development. It comes complete with a set of preconfigured capabilities aligned to its business purpose. Deploy this app from the Templates page with a single click in the Foundry UI, or create an app from this template using the CLI.
 
@@ -11,7 +11,7 @@ This app is one of several App Templates included in Foundry that you can use to
 
 ## Description
 
-The ServiceNow ITSM Helper is a Foundry application that enables seamless integration between CrowdStrike Falcon and ServiceNow ITSM systems. This integration allows security teams to efficiently manage incidents by automatically creating and updating ServiceNow tickets based on CrowdStrike detections and alerts.
+The ServiceNow ITSM and SIR is a Foundry application that enables seamless integration between CrowdStrike Falcon and ServiceNow ITSM systems. This integration allows security teams to efficiently manage incidents by automatically creating and updating ServiceNow tickets based on CrowdStrike detections and alerts.
 
 ### Key Capabilities and Features
 
@@ -101,7 +101,7 @@ Next, go to **Foundry** > **App catalog**, find your app, and install it.
 
 ## About this app
 
-The ServiceNow ITSM Helper Foundry app automates the integration between ServiceNow and CrowdStrike's Fusion SOAR platform, streamlining IT Service Management workflows.
+The ServiceNow ITSM and SIR Foundry app automates the integration between ServiceNow and CrowdStrike's Fusion SOAR platform, streamlining IT Service Management workflows.
 
 For more information about this app:
 - [User Documentation](USERDOCS.md) - Detailed user guide with setup instructions, use cases, and configuration options

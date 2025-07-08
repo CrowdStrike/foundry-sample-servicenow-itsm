@@ -119,7 +119,7 @@ This action provides throttling functionality to control the flow of updates in 
 
 All actions are part of a single function called `itsm_helper`. This function is exposed to Workflow through the integrations listed above.
 
-The ServiceNow ITSM Helper App uses the ServiceNow API integration (Name: `servicenow-foundry`, defined in [api-integrations/servicenow.json](api-integrations/servicenow.json)) to communicate with ServiceNow. It supports two main operations:
+The ServiceNow ITSM and SIR App uses the ServiceNow API integration (Name: `servicenow-foundry`, defined in [api-integrations/servicenow.json](api-integrations/servicenow.json)) to communicate with ServiceNow. It supports two main operations:
 - `create_incident`: Creates a standard incident in ServiceNow
 - `create_sn_si_incident`: Creates a Security Incident Response (SIR) incident in ServiceNow
 
