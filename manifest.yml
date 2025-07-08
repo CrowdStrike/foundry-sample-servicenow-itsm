@@ -1,9 +1,9 @@
 name: ServiceNow ITSM and SIR App
 description: "Enable seamless integration between CrowdStrike and ServiceNow ITSM by automatically creating and updating ServiceNow tickets based on CrowdStrike alerts"
 logo: images/project/servicenow_logo.png
-vendor: ""
+vendor: "ServiceNow"
 vendor_products: []
-use_case: ""
+use_case: "ITSM"
 manifest_version: "2023-05-09"
 ignored: []
 ui:
