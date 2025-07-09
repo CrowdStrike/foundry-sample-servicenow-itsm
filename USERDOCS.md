@@ -2,7 +2,7 @@
 
 ## High-Level Overview
 
-The ServiceNow ITSM Helper is a Foundry application that enables seamless integration between CrowdStrike Falcon and ServiceNow IT Service Management (ITSM) systems. This integration allows security teams to efficiently manage incidents by automatically creating and updating ServiceNow tickets based on CrowdStrike detections and alerts.
+The ServiceNow ITSM and SIR is a Foundry application that enables seamless integration between CrowdStrike Falcon and ServiceNow IT Service Management (ITSM) systems. This integration allows security teams to efficiently manage incidents by automatically creating and updating ServiceNow tickets based on CrowdStrike detections and alerts.
 
 The app provides a bridge between your security operations in CrowdStrike and your IT service management processes in ServiceNow, ensuring that security incidents are properly tracked, managed, and resolved through established ITSM workflows.
 
@@ -17,7 +17,7 @@ The app provides a bridge between your security operations in CrowdStrike and yo
 
 ## Prerequisites and Requirements
 
-Before using the ServiceNow ITSM Helper app, ensure you have:
+Before using the ServiceNow ITSM and SIR app, ensure you have:
 
 - A CrowdStrike Falcon instance with Foundry enabled
 - A ServiceNow instance with ITSM module installed
@@ -53,7 +53,7 @@ The following ACLs must be created for the User Role from Step 1.
 
 #### Description of Alert Flow
 
-The ServiceNow ITSM Helper enables one-way synchronization of alerts from CrowdStrike to ServiceNow. When a security event is detected in CrowdStrike, the app can automatically create a corresponding ticket in ServiceNow, ensuring that security incidents are properly tracked in your ITSM system.
+The ServiceNow ITSM and SIR enables one-way synchronization of alerts from CrowdStrike to ServiceNow. When a security event is detected in CrowdStrike, the app can automatically create a corresponding ticket in ServiceNow, ensuring that security incidents are properly tracked in your ITSM system.
 
 <img alt="Alert creation high-level workflow diagram" src="images/userdocs/alert_flow_highlevel_diagram.png" width="" height="400"/>
 
@@ -61,7 +61,7 @@ The workflow works as follows:
 
 1. A security event is detected in CrowdStrike
 2. The event triggers a workflow in Falcon Fusion (e.g., Alert trigger)
-3. The workflow calls the ServiceNow ITSM Helper app
+3. The workflow calls the ServiceNow ITSM and SIR app
 4. The app checks if a ticket already exists for this entity
 5. If no ticket exists, the app creates a new ticket in ServiceNow
 6. The app stores the mapping between the CrowdStrike entity and the ServiceNow ticket
@@ -125,7 +125,7 @@ For existing alerts, a completely separate workflow from alert creation is used.
 
 #### Overview of Consolidated Ticket Approach
 
-The ServiceNow ITSM Helper app allows you to use a single ServiceNow ticket as a container for multiple security objects. This approach provides a consolidated view of related security entities, making it easier to track and manage incidents that involve multiple hosts, users, or alerts.
+The ServiceNow ITSM and SIR app allows you to use a single ServiceNow ticket as a container for multiple security objects. This approach provides a consolidated view of related security entities, making it easier to track and manage incidents that involve multiple hosts, users, or alerts.
 
 Instead of creating separate tickets for each security object, you can associate all related objects with a single ticket, providing a more holistic view of the security incident.
 
@@ -208,7 +208,7 @@ Complete workflow example with throttling implementation:
 
 ### Hierarchical Category Fields FAQ
 
-ServiceNow often uses hierarchical category fields, where the selection in one field determines the available options in subsequent fields (like category and subcategory). The ServiceNow ITSM Helper app supports this functionality.
+ServiceNow often uses hierarchical category fields, where the selection in one field determines the available options in subsequent fields (like category and subcategory). The ServiceNow ITSM and SIR app supports this functionality.
 
 #### How to Configure Dependent Fields
 
@@ -305,7 +305,7 @@ When implemented correctly, selecting a value in the parent field will automatic
 
 ### Adding Custom ServiceNow Fields
 
-ServiceNow often includes custom fields (prefixed with "u_" or "x_") that are specific to an organization's implementation. The ServiceNow ITSM Helper app provides two approaches to incorporate these custom fields:
+ServiceNow often includes custom fields (prefixed with "u_" or "x_") that are specific to an organization's implementation. The ServiceNow ITSM and SIR app provides two approaches to incorporate these custom fields:
 
 1. **Using the "Custom Fields JSON (advanced)" parameter**: Pass any custom fields as a JSON string without modifying the app
    ```json
