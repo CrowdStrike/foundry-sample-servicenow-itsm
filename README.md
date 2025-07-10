@@ -99,7 +99,7 @@ foundry apps release
 
 Next, go to **Foundry** > **App catalog**, find your app, and install it.
 
-## About this app
+## About this sample app
 
 The ServiceNow ITSM and SIR Foundry app automates the integration between ServiceNow and CrowdStrike's Fusion SOAR platform, streamlining IT Service Management workflows.
 
