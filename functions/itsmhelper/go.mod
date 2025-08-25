@@ -8,7 +8,7 @@ require (
 	github.com/CrowdStrike/foundry-fn-go v0.24.1
 	github.com/crowdstrike/gofalcon v0.16.0
 	github.com/go-openapi/runtime v0.28.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 )
 
 require (
