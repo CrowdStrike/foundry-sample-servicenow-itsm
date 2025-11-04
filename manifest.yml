@@ -5,7 +5,10 @@ vendor: "ServiceNow"
 vendor_products: []
 use_case: "ITSM"
 manifest_version: "2023-05-09"
-ignored: []
+ignored:
+  - e2e
+  - e2e/.+
+  - run-e2e-local\.sh
 ui:
   homepage: ""
   extensions: []
