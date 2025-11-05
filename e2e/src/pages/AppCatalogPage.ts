@@ -132,38 +132,47 @@ export class AppCatalogPage extends BasePage {
   private async configureServiceNowIfNeeded(): Promise<void> {
     this.logger.info('Checking if ServiceNow API configuration is required...');
 
-    // Check if there are text input fields (configuration form)
-    const textInputs = this.page.locator('input[type="text"]');
+    // Check if authentication type button is present (ServiceNow configuration form)
+    const authTypeButton = this.page.getByRole('button', { name: /Authentication Type/i });
 
     try {
-      await textInputs.first().waitFor({ state: 'visible', timeout: 15000 });
-      const count = await textInputs.count();
-      this.logger.info(`ServiceNow configuration form detected with ${count} input fields`);
+      await authTypeButton.waitFor({ state: 'visible', timeout: 15000 });
+      this.logger.info('ServiceNow configuration form detected');
     } catch (error) {
-      this.logger.info('No ServiceNow configuration required - no input fields found');
+      this.logger.info('No ServiceNow configuration required - configuration form not found');
       return;
     }
 
-    this.logger.info('ServiceNow configuration required, filling dummy values');
+    this.logger.info('ServiceNow configuration required, filling values');
 
-    // Fill configuration fields using index-based selection
-    // Field 1: Name
-    const nameField = this.page.locator('input[type="text"]').first();
-    await nameField.fill('ServiceNow Test Instance');
-    this.logger.debug('Filled Name field');
+    // Step 1: Select Basic Authentication from dropdown
+    this.logger.debug('Clicking authentication type dropdown');
+    await authTypeButton.click();
 
-    // Field 2: Instance (the {instance} part of {instance}.service-now.com)
-    const instanceField = this.page.locator('input[type="text"]').nth(1);
-    await instanceField.fill('dev12345');
-    this.logger.debug('Filled Instance field');
+    const basicAuthOption = this.page.getByRole('option', { name: 'Basic Authentication' });
+    await this.waiter.waitForVisible(basicAuthOption, { description: 'Basic Authentication option' });
+    await basicAuthOption.click();
+    this.logger.debug('Selected Basic Authentication');
 
-    // Field 3: Username
-    const usernameField = this.page.locator('input[type="text"]').nth(2);
+    // Wait for form to update after selecting auth type
+    await this.waiter.delay(1000);
+
+    // Step 2: Fill ServiceNow Instance URL (use env var or error)
+    const serviceNowUrl = process.env.SERVICENOW_INSTANCE_URL;
+    if (!serviceNowUrl) {
+      throw new Error('SERVICENOW_INSTANCE_URL environment variable is required but not set in .env file');
+    }
+    const instanceUrlField = this.page.getByRole('textbox', { name: /ServiceNow Instance URL/i });
+    await instanceUrlField.fill(serviceNowUrl);
+    this.logger.debug(`Filled ServiceNow Instance URL: ${serviceNowUrl}`);
+
+    // Step 3: Fill Username
+    const usernameField = this.page.getByRole('textbox', { name: /Username/i });
     await usernameField.fill('dummy_user');
     this.logger.debug('Filled Username field');
 
-    // Field 4: Password (must be >8 characters)
-    const passwordField = this.page.locator('input[type="password"]').first();
+    // Step 4: Fill Password (must be >8 characters)
+    const passwordField = this.page.getByRole('textbox', { name: /Password/i });
     await passwordField.fill('DummyPassword123');
     this.logger.debug('Filled Password field');
 
