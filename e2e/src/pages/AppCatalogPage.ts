@@ -145,7 +145,12 @@ export class AppCatalogPage extends BasePage {
 
     this.logger.info('ServiceNow configuration required, filling values');
 
-    // Step 1: Select Basic Authentication from dropdown
+    // Step 1: Fill Configuration name (required field at top)
+    const configNameField = this.page.getByRole('textbox', { name: /Configuration name/i });
+    await configNameField.fill('ServiceNow Test Instance');
+    this.logger.debug('Filled Configuration name');
+
+    // Step 2: Select Basic Authentication from dropdown
     this.logger.debug('Clicking authentication type dropdown');
     await authTypeButton.click();
 
@@ -157,7 +162,7 @@ export class AppCatalogPage extends BasePage {
     // Wait for form to update after selecting auth type
     await this.waiter.delay(1000);
 
-    // Step 2: Fill ServiceNow Instance URL (use env var or error)
+    // Step 3: Fill ServiceNow Instance URL (use env var or error)
     const serviceNowUrl = process.env.SERVICENOW_INSTANCE_URL;
     if (!serviceNowUrl) {
       throw new Error('SERVICENOW_INSTANCE_URL environment variable is required but not set in .env file');
@@ -166,12 +171,12 @@ export class AppCatalogPage extends BasePage {
     await instanceUrlField.fill(serviceNowUrl);
     this.logger.debug(`Filled ServiceNow Instance URL: ${serviceNowUrl}`);
 
-    // Step 3: Fill Username
+    // Step 4: Fill Username
     const usernameField = this.page.getByRole('textbox', { name: /Username/i });
     await usernameField.fill('dummy_user');
     this.logger.debug('Filled Username field');
 
-    // Step 4: Fill Password (must be >8 characters)
+    // Step 5: Fill Password (must be >8 characters)
     const passwordField = this.page.getByRole('textbox', { name: /Password/i });
     await passwordField.fill('DummyPassword123');
     this.logger.debug('Filled Password field');
@@ -214,14 +219,36 @@ export class AppCatalogPage extends BasePage {
       this.page.waitForLoadState('networkidle', { timeout: 15000 })
     ]).catch(() => {});
 
-    // Look for "installing" message
+    // Look for first "installing" message
     const installingMessage = this.page.getByText(/installing/i).first();
 
     try {
       await installingMessage.waitFor({ state: 'visible', timeout: 30000 });
-      this.logger.success('Installation started - success message appeared');
+      this.logger.success('Installation started - "installing" message appeared');
     } catch (error) {
-      this.logger.warn('Installation message not visible, assuming installation succeeded');
+      throw new Error(`Installation failed to start for app '${appName}' - "installing" message never appeared. Installation may have failed immediately.`);
+    }
+
+    // Wait for second toast with final status (installed or error)
+    // Try to find success message first
+    const installedMessage = this.page.getByText(/installed/i).first();
+    const errorMessage = this.page.getByText(/error.*install/i).first();
+
+    try {
+      await Promise.race([
+        installedMessage.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'success'),
+        errorMessage.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'error')
+      ]).then(result => {
+        if (result === 'error') {
+          throw new Error(`Installation failed for app '${appName}' - error message appeared`);
+        }
+        this.logger.success('Installation completed successfully - "installed" message appeared');
+      });
+    } catch (error) {
+      if (error.message.includes('Installation failed')) {
+        throw error;
+      }
+      throw new Error(`Installation status unclear for app '${appName}' - timed out waiting for "installed" or "error" message after 60 seconds`);
     }
   }
 
