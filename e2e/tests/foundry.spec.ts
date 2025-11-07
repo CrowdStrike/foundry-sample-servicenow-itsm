@@ -64,61 +64,70 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
         await workflowsPage.page.waitForLoadState('networkidle');
       }
 
-      // Find all instances of this action (may include stale ones from previous installs)
-      // Use exact: false to be more flexible with matching
-      const actionElements = await workflowsPage.page.getByText(actionName, { exact: false }).all();
-
-      if (actionElements.length === 0) {
-        throw new Error(`Action '${actionName}' not found in search results`);
-      }
-
-      console.log(`Found ${actionElements.length} instance(s) of '${actionName}' - trying each until one works...`);
-
+      // Find instances of this action (may include stale ones from previous installs)
+      // Re-query on each attempt to avoid stale element references
       let actionAdded = false;
+      const maxRetries = 5;
 
-      // Try each instance until we find one that's not stale
-      for (let i = 0; i < actionElements.length; i++) {
-        console.log(`  Trying instance ${i + 1}/${actionElements.length}...`);
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        console.log(`  Attempt ${attempt + 1}/${maxRetries} for '${actionName}'...`);
 
         try {
-          // Click on the action
-          await actionElements[i].click();
+          // Re-query elements on each attempt to avoid staleness
+          const actionElements = await workflowsPage.page.getByText(actionName, { exact: false }).all();
+
+          if (actionElements.length === 0) {
+            throw new Error(`Action '${actionName}' not found in search results`);
+          }
+
+          console.log(`  Found ${actionElements.length} instance(s), trying first one...`);
+
+          // Always try the first matching element (most likely to be current)
+          await actionElements[0].click();
           await workflowsPage.page.waitForLoadState('networkidle');
 
           // Wait for the details panel to load and check if configuration is present
           // Stale actions won't show the "Configure" heading
-          // Look for the Configure heading as indicator of valid action
-          try {
-            const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure', level: 4 });
-            await configureHeading.waitFor({ state: 'visible', timeout: 15000 });
-            console.log(`✓ Action verified: ${actionName} - Configure section is present`);
-            actionAdded = true;
+          const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure', level: 4 });
+          await configureHeading.waitFor({ state: 'visible', timeout: 10000 });
+          console.log(`✓ Action verified: ${actionName} - Configure section is present`);
+          actionAdded = true;
 
-            // Close the dialog to prepare for next action
+          // Close the dialog to prepare for next action
+          const backButton = workflowsPage.page.getByRole('button', { name: 'Back' }).or(
+            workflowsPage.page.getByLabel('Back')
+          );
+          if (await backButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+            await backButton.click();
+            await workflowsPage.page.waitForLoadState('networkidle');
+
+            // Wait for action list to reload after going back
+            await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
+            await workflowsPage.page.waitForLoadState('networkidle');
+          }
+
+          break;
+        } catch (error) {
+          console.log(`  Attempt ${attempt + 1} failed: ${error.message}`);
+
+          if (attempt < maxRetries - 1) {
+            // Wait a bit before retrying
+            await workflowsPage.page.waitForTimeout(1000);
+
+            // Try going back to action list if we're stuck in details panel
             const backButton = workflowsPage.page.getByRole('button', { name: 'Back' }).or(
               workflowsPage.page.getByLabel('Back')
             );
             if (await backButton.isVisible({ timeout: 1000 }).catch(() => false)) {
               await backButton.click();
               await workflowsPage.page.waitForLoadState('networkidle');
-
-              // Wait for action list to reload after going back
-              await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
-              await workflowsPage.page.waitForLoadState('networkidle');
             }
-
-            break;
-          } catch (error) {
-            const errorMsg = error.message || 'Unknown error';
-            console.log(`  Instance ${i + 1} failed: ${errorMsg}`);
           }
-        } catch (error) {
-          console.log(`  Instance ${i + 1} failed: ${error.message}, trying next...`);
         }
       }
 
       if (!actionAdded) {
-        throw new Error(`Failed to add action '${actionName}' - all ${actionElements.length} instance(s) appear to be stale or invalid`);
+        throw new Error(`Failed to add action '${actionName}' after ${maxRetries} attempts - action may be stale or invalid`);
       }
     }
 
