@@ -64,57 +64,53 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
         await workflowsPage.page.waitForLoadState('networkidle');
       }
 
-      // Find instances of this action (may include stale ones from previous installs)
-      // Re-query on each attempt to avoid stale element references
-      let actionAdded = false;
-      const maxRetries = 5;
+      // Find all instances of this action (may include stale ones from previous installs)
+      const actionElements = await workflowsPage.page.getByText(actionName, { exact: false }).all();
 
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        console.log(`  Attempt ${attempt + 1}/${maxRetries} for '${actionName}'...`);
+      if (actionElements.length === 0) {
+        throw new Error(`Action '${actionName}' not found in search results`);
+      }
+
+      console.log(`Found ${actionElements.length} instance(s) of '${actionName}' - trying each until one works...`);
+
+      let actionVerified = false;
+
+      // Try each instance until we find one that's not stale
+      for (let i = 0; i < actionElements.length; i++) {
+        console.log(`  Trying instance ${i + 1}/${actionElements.length}...`);
 
         try {
-          // Re-query elements on each attempt to avoid staleness
-          const actionElements = await workflowsPage.page.getByText(actionName, { exact: false }).all();
-
-          if (actionElements.length === 0) {
-            throw new Error(`Action '${actionName}' not found in search results`);
-          }
-
-          console.log(`  Found ${actionElements.length} instance(s), trying first one...`);
-
-          // Always try the first matching element (most likely to be current)
-          await actionElements[0].click();
+          // Click on the action
+          await actionElements[i].click();
           await workflowsPage.page.waitForLoadState('networkidle');
 
           // Wait for the details panel to load and check if configuration is present
           // Stale actions won't show the "Configure" heading
-          const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure', level: 4 });
-          await configureHeading.waitFor({ state: 'visible', timeout: 10000 });
-          console.log(`✓ Action verified: ${actionName} - Configure section is present`);
-          actionAdded = true;
+          try {
+            const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure', level: 4 });
+            await configureHeading.waitFor({ state: 'visible', timeout: 15000 });
+            console.log(`✓ Action verified: ${actionName} - Configure section is present`);
+            actionVerified = true;
 
-          // Close the dialog to prepare for next action
-          const backButton = workflowsPage.page.getByRole('button', { name: 'Back' }).or(
-            workflowsPage.page.getByLabel('Back')
-          );
-          if (await backButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-            await backButton.click();
-            await workflowsPage.page.waitForLoadState('networkidle');
+            // Close the dialog to prepare for next action
+            const backButton = workflowsPage.page.getByRole('button', { name: 'Back' }).or(
+              workflowsPage.page.getByLabel('Back')
+            );
+            if (await backButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+              await backButton.click();
+              await workflowsPage.page.waitForLoadState('networkidle');
 
-            // Wait for action list to reload after going back
-            await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
-            await workflowsPage.page.waitForLoadState('networkidle');
-          }
+              // Wait for action list to reload after going back
+              await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
+              await workflowsPage.page.waitForLoadState('networkidle');
+            }
 
-          break;
-        } catch (error) {
-          console.log(`  Attempt ${attempt + 1} failed: ${error.message}`);
+            break;
+          } catch (error) {
+            const errorMsg = error.message || 'Unknown error';
+            console.log(`  Instance ${i + 1} failed: ${errorMsg}`);
 
-          if (attempt < maxRetries - 1) {
-            // Wait a bit before retrying
-            await workflowsPage.page.waitForTimeout(1000);
-
-            // Try going back to action list if we're stuck in details panel
+            // Go back to try next instance
             const backButton = workflowsPage.page.getByRole('button', { name: 'Back' }).or(
               workflowsPage.page.getByLabel('Back')
             );
@@ -123,11 +119,13 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
               await workflowsPage.page.waitForLoadState('networkidle');
             }
           }
+        } catch (error) {
+          console.log(`  Instance ${i + 1} failed: ${error.message}, trying next...`);
         }
       }
 
-      if (!actionAdded) {
-        throw new Error(`Failed to add action '${actionName}' after ${maxRetries} attempts - action may be stale or invalid`);
+      if (!actionVerified) {
+        throw new Error(`Failed to verify action '${actionName}' - all ${actionElements.length} instance(s) appear to be stale or invalid`);
       }
     }
 
