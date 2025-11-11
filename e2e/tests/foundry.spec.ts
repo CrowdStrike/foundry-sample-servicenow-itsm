@@ -6,7 +6,6 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
   test('should verify ServiceNow ITSM Helper workflow actions are available in workflow builder', async ({ workflowsPage }) => {
     // This app provides helper functions for ServiceNow ITSM integration
     // We verify all 5 ITSM Helper actions are available in the workflow builder
-    // Increase timeout as we're testing 5 actions with search waits
     test.setTimeout(180000); // 3 minutes
     await workflowsPage.navigateToWorkflows();
     await workflowsPage.createNewWorkflow();
