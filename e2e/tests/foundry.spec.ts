@@ -65,7 +65,11 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
       }
 
       // Find all instances of this action (may include stale ones from previous installs)
-      const actionElements = await workflowsPage.page.getByText(actionName, { exact: false }).all();
+      // Wait for at least one instance to appear before getting all instances
+      const actionLocator = workflowsPage.page.getByText(actionName, { exact: false });
+      await actionLocator.first().waitFor({ state: 'attached', timeout: 30000 });
+
+      const actionElements = await actionLocator.all();
 
       if (actionElements.length === 0) {
         throw new Error(`Action '${actionName}' not found in search results`);
