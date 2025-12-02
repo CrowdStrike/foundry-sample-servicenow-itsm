@@ -33,10 +33,11 @@ export class AppCatalogPage extends BasePage {
 
     await this.navigateToPath('/foundry/app-catalog', 'App catalog page');
 
-    const searchBox = this.page.getByRole('searchbox', { name: 'Search' });
-    await searchBox.fill(appName);
-    await this.page.keyboard.press('Enter');
-    await this.page.waitForLoadState('networkidle');
+    const filterBox = this.page.getByPlaceholder('Type to filter');
+    if (await filterBox.isVisible().catch(() => false)) {
+      await filterBox.fill(appName);
+      await this.page.waitForLoadState('networkidle');
+    }
 
     const appLink = this.page.getByRole('link', { name: appName, exact: true });
 
@@ -128,14 +129,14 @@ export class AppCatalogPage extends BasePage {
 
   /**
    * Configure API integration if configuration form is present during installation.
-   * 
+   *
    * NOTE: This method currently handles ServiceNow-specific fields but is designed as
    * a no-op for apps without API integrations. This common pattern across all sample apps
    * will be extracted to the future @crowdstrike/foundry-e2e-testing framework.
-   * 
+   *
    * Apps with ServiceNow configuration: servicenow-itsm, servicenow-idp
    * Other apps: Returns early when no configuration fields detected
-   * 
+   *
    * @future-framework-extraction Candidate for BasePage or AppCatalogPage in shared framework
    */
   private async configureApiIntegrationIfNeeded(): Promise<void> {
@@ -180,14 +181,22 @@ export class AppCatalogPage extends BasePage {
     await instanceUrlField.fill(serviceNowUrl);
     this.logger.debug(`Filled ServiceNow Instance URL: ${serviceNowUrl}`);
 
-    // Step 4: Fill Username
+    // Step 4: Fill Username (from env var)
+    const serviceNowUsername = process.env.SERVICENOW_USERNAME;
+    if (!serviceNowUsername) {
+      throw new Error('SERVICENOW_USERNAME environment variable is required but not set in .env file');
+    }
     const usernameField = this.page.getByRole('textbox', { name: /Username/i });
-    await usernameField.fill('dummy_user');
-    this.logger.debug('Filled Username field');
+    await usernameField.fill(serviceNowUsername);
+    this.logger.debug(`Filled Username field: ${serviceNowUsername}`);
 
-    // Step 5: Fill Password (must be >8 characters)
+    // Step 5: Fill Password (from env var)
+    const serviceNowPassword = process.env.SERVICENOW_PASSWORD;
+    if (!serviceNowPassword) {
+      throw new Error('SERVICENOW_PASSWORD environment variable is required but not set in .env file');
+    }
     const passwordField = this.page.getByRole('textbox', { name: /Password/i });
-    await passwordField.fill('DummyPassword123');
+    await passwordField.fill(serviceNowPassword);
     this.logger.debug('Filled Password field');
 
     // Wait for network to settle after filling form
@@ -244,15 +253,18 @@ export class AppCatalogPage extends BasePage {
     const errorMessage = this.page.getByText(`Error installing ${appName}`).first();
 
     try {
-      await Promise.race([
+      const result = await Promise.race([
         installedMessage.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'success'),
         errorMessage.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'error')
-      ]).then(result => {
-        if (result === 'error') {
-          throw new Error(`Installation failed for app '${appName}' - error message appeared`);
-        }
-        this.logger.success('Installation completed successfully - "installed" message appeared');
-      });
+      ]);
+
+      if (result === 'error') {
+        // Get the actual error message from the toast and clean up formatting
+        const errorText = await errorMessage.textContent();
+        const cleanError = errorText?.replace(/\s+/g, ' ').trim() || 'Unknown error';
+        throw new Error(`Installation failed for app '${appName}': ${cleanError}`);
+      }
+      this.logger.success('Installation completed successfully - "installed" message appeared');
     } catch (error) {
       if (error.message.includes('Installation failed')) {
         throw error;
@@ -270,7 +282,7 @@ export class AppCatalogPage extends BasePage {
 
     // Check status a couple times (up to 10 seconds)
     const statusText = this.page.locator('[data-test-selector="status-text"]').filter({ hasText: /installed/i });
-    const maxAttempts = 2; // 2 attempts = up to 10 seconds
+    const maxAttempts = 5; // 2 attempts = up to 10 seconds
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const isVisible = await statusText.isVisible().catch(() => false);

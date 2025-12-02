@@ -6,7 +6,7 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
   test('should verify ServiceNow ITSM Helper workflow actions are available in workflow builder', async ({ workflowsPage }) => {
     // This app provides helper functions for ServiceNow ITSM integration
     // We verify all 5 ITSM Helper actions are available in the workflow builder
-    test.setTimeout(180000); // 3 minutes
+    test.setTimeout(120000); // 2 minutes - buffer for stale action handling
     await workflowsPage.navigateToWorkflows();
     await workflowsPage.createNewWorkflow();
 
@@ -49,19 +49,34 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
       await expect(searchBox).toBeEnabled({ timeout: 10000 });
       await searchBox.fill(actionName);
 
-      // Wait for search results to load
-      await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
+      // Wait for search results to load by waiting for network idle first
       await workflowsPage.page.waitForLoadState('networkidle');
 
-      // Expand "Other (Custom, Foundry, etc.)" section if it exists
-      const otherSection = workflowsPage.page.getByText('Other (Custom, Foundry, etc.)');
-      if (await otherSection.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await otherSection.click();
+      // Wait for ALL loading spinners to disappear completely
+      await workflowsPage.page.waitForSelector('text="This may take a few moments"', { state: 'hidden', timeout: 90000 });
 
-        // Wait for section's internal loading to complete
-        await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
-        await workflowsPage.page.waitForLoadState('networkidle');
-      }
+      // Wait for network to be idle again after search results load
+      await workflowsPage.page.waitForLoadState('networkidle');
+
+      // Look for "Top results" or similar text indicating search completed successfully
+      const topResults = workflowsPage.page.getByText('Top results').or(
+        workflowsPage.page.getByText(/\d+ actions/)
+      );
+      await expect(topResults.first()).toBeVisible({ timeout: 30000 });
+
+      // ALWAYS expand "Other (Custom, Foundry, etc.)" section since ITSM actions are there
+      const otherSection = workflowsPage.page.getByText('Other (Custom, Foundry, etc.)');
+      await expect(otherSection).toBeVisible({ timeout: 10000 });
+      await otherSection.click();
+
+      // Wait for the section to expand and load its contents
+      await workflowsPage.page.waitForLoadState('networkidle');
+
+      // Wait for any loading in the expanded section to complete
+      await workflowsPage.page.waitForSelector('text="This may take a few moments"', {
+        state: 'hidden',
+        timeout: 30000
+      }).catch(() => {}); // Don't fail if no loading messages appear
 
       // Find all instances of this action (may include stale ones from previous installs)
       // Wait for at least one instance to appear before getting all instances
@@ -90,8 +105,12 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
           // Wait for the details panel to load and check if configuration is present
           // Stale actions won't show the "Configure" heading
           try {
-            const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure', level: 4 });
-            await configureHeading.waitFor({ state: 'visible', timeout: 15000 });
+            // Try multiple ways to detect a valid action configuration
+            const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure' });
+            const configureTab = workflowsPage.page.getByRole('tab', { name: 'Configure' });
+            const configIndicator = configureHeading.or(configureTab);
+
+            await configIndicator.waitFor({ state: 'visible', timeout: 20000 });
             console.log(`✓ Action verified: ${actionName} - Configure section is present`);
             actionVerified = true;
 
@@ -104,7 +123,8 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
               await workflowsPage.page.waitForLoadState('networkidle');
 
               // Wait for action list to reload after going back
-              await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
+              const allLoadingMessages = workflowsPage.page.locator('text="This may take a few moments"');
+              await expect(allLoadingMessages).toHaveCount(0, { timeout: 60000 });
               await workflowsPage.page.waitForLoadState('networkidle');
             }
 

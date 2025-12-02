@@ -30,14 +30,23 @@ npm run test:ui       # Interactive UI
 ## Environment Variables
 
 ```env
+# CrowdStrike Falcon Configuration
 APP_NAME=foundry-sample-servicenow-itsm
 FALCON_BASE_URL=https://falcon.us-2.crowdstrike.com
 FALCON_USERNAME=your-username
 FALCON_PASSWORD=your-password
 FALCON_AUTH_SECRET=your-mfa-secret
+
+# ServiceNow Instance Configuration (Required for App Installation)
+SERVICENOW_INSTANCE_URL=https://dev123456.service-now.com
+SERVICENOW_USERNAME=your-servicenow-username
+SERVICENOW_PASSWORD=your-servicenow-password
 ```
 
-**Important:** The `APP_NAME` must exactly match the app name as deployed in Falcon.
+**Important:**
+- The `APP_NAME` must exactly match the app name as deployed in Falcon.
+- ServiceNow credentials are required for app installation as the app needs to configure API integration with a ServiceNow instance.
+- You'll need a valid ServiceNow developer instance. Get one free at [developer.servicenow.com](https://developer.servicenow.com).
 
 ## Test Flow
 
