@@ -280,9 +280,9 @@ export class AppCatalogPage extends BasePage {
     await this.page.goto(`${baseUrl}/foundry/app-catalog?q=${appName}`);
     await this.page.waitForLoadState('networkidle');
 
-    // Check status a couple times (up to 10 seconds)
+    // Check status a few times (up to 25 seconds)
     const statusText = this.page.locator('[data-test-selector="status-text"]').filter({ hasText: /installed/i });
-    const maxAttempts = 5; // 2 attempts = up to 10 seconds
+    const maxAttempts = 5; // 5 attempts = up to 25 seconds
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const isVisible = await statusText.isVisible().catch(() => false);
