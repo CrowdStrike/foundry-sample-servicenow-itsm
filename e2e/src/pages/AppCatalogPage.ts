@@ -271,8 +271,8 @@ export class AppCatalogPage extends BasePage {
       }
       throw new Error(`Installation status unclear for app '${appName}' - timed out waiting for "installed" or "error" message after 60 seconds`);
     }
-    // Brief catalog status check (5-10s) - "installed" toast is the real signal
-    // This is just for logging/verification, not a hard requirement
+    // Brief catalog status check (5-25s) - "installed" toast is the real signal
+    // This is just for logging/verification, and to wait for indexing of actions
     this.logger.info('Checking catalog status briefly (installation already confirmed by toast)...');
 
     // Navigate directly to app catalog with search query
