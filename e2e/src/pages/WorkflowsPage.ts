@@ -43,10 +43,13 @@ export class WorkflowsPage extends BasePage {
         const navigation = this.page.locator('nav, [role="navigation"]');
         const fusionSoarButton = navigation.getByRole('button', { name: 'Fusion SOAR' });
         await fusionSoarButton.click();
-        await this.waiter.delay(500);
 
-        // Click Workflows link
+        // Wait for the submenu to expand and be visible
+        await this.page.waitForLoadState('networkidle');
+
+        // Click Workflows link - wait for it to be visible first
         const workflowsLink = this.page.getByRole('link', { name: 'Workflows' });
+        await workflowsLink.waitFor({ state: 'visible', timeout: 10000 });
         await workflowsLink.click();
 
         // Wait for workflows page to load
