@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/CrowdStrike/foundry-fn-go v0.24.1
-	github.com/crowdstrike/gofalcon v0.18.0
+	github.com/crowdstrike/gofalcon v0.19.0
 	github.com/go-openapi/runtime v0.29.2
 	github.com/stretchr/testify v1.11.1
 )
