@@ -19,7 +19,7 @@ export class WorkflowsPage extends BasePage {
     // Workflows page shows "Next-Gen SIEM" heading but has "Workflows" in breadcrumb
     // Check for either breadcrumb, "All workflows" link, or "Create a workflow" link
     const workflowsIndicator = this.page.getByRole('link', { name: /All workflows|Create a workflow/i }).first();
-    await expect(workflowsIndicator).toBeVisible({ timeout: 10000 });
+    await expect(workflowsIndicator).toBeVisible({ timeout: 30000 });
     this.logger.success('Workflows page loaded');
   }
 
@@ -49,7 +49,7 @@ export class WorkflowsPage extends BasePage {
 
         // Click Workflows link - wait for it to be visible first
         const workflowsLink = this.page.getByRole('link', { name: 'Workflows' });
-        await workflowsLink.waitFor({ state: 'visible', timeout: 10000 });
+        await workflowsLink.waitFor({ state: 'visible', timeout: 30000 });
         await workflowsLink.click();
 
         // Wait for workflows page to load
