@@ -21,6 +21,6 @@ updates:
       - dependency-name: "actions/setup-go"
         versions: [">=6.2.0"]
       - dependency-name: "actions/upload-artifact"
-        versions: [">=6.0.0"]
+        versions: [">=7.0.0"]
       - dependency-name: "actions/checkout"
         versions: [">=6.0.3"]
