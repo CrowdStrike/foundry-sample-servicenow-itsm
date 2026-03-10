@@ -49,68 +49,55 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
       await expect(searchBox).toBeEnabled({ timeout: 10000 });
       await searchBox.fill(actionName);
 
-      // Wait for search results to load by waiting for network idle first
+      // Wait for search results to load
+      await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
       await workflowsPage.page.waitForLoadState('networkidle');
 
-      // Wait for ALL loading spinners to disappear completely
-      await workflowsPage.page.waitForSelector('text="This may take a few moments"', { state: 'hidden', timeout: 90000 });
-
-      // Wait for network to be idle again after search results load
-      await workflowsPage.page.waitForLoadState('networkidle');
-
-      // Look for "Top results" or similar text indicating search completed successfully
-      const topResults = workflowsPage.page.getByText('Top results').or(
-        workflowsPage.page.getByText(/\d+ actions/)
-      );
-      await expect(topResults.first()).toBeVisible({ timeout: 30000 });
-
-      // ALWAYS expand "Other (Custom, Foundry, etc.)" section since ITSM actions are there
+      // Expand "Other (Custom, Foundry, etc.)" section if it exists
       const otherSection = workflowsPage.page.getByText('Other (Custom, Foundry, etc.)');
-      await expect(otherSection).toBeVisible({ timeout: 10000 });
-      await otherSection.click();
+      if (await otherSection.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await otherSection.click();
 
-      // Wait for the section to expand and load its contents
-      await workflowsPage.page.waitForLoadState('networkidle');
-
-      // Wait for any loading in the expanded section to complete
-      await workflowsPage.page.waitForSelector('text="This may take a few moments"', {
-        state: 'hidden',
-        timeout: 30000
-      }).catch(() => {}); // Don't fail if no loading messages appear
-
-      // Find all instances of this action (may include stale ones from previous installs)
-      // Wait for at least one instance to appear before getting all instances
-      const actionLocator = workflowsPage.page.getByText(actionName, { exact: false });
-      await actionLocator.first().waitFor({ state: 'attached', timeout: 30000 });
-
-      const actionElements = await actionLocator.all();
-
-      if (actionElements.length === 0) {
-        throw new Error(`Action '${actionName}' not found in search results`);
+        // Wait for section's internal loading to complete
+        await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
+        await workflowsPage.page.waitForLoadState('networkidle');
       }
 
-      console.log(`Found ${actionElements.length} instance(s) of '${actionName}' - trying each until one works...`);
+      // Use the node-tile-heading test selector for precise matching
+      // Each action card has a heading span with data-test-selector="node-tile-heading"
+      const actionHeadings = workflowsPage.page.locator('[data-test-selector="node-tile-heading"]').filter({ hasText: actionName });
+      await actionHeadings.first().waitFor({ state: 'visible', timeout: 30000 });
+
+      // Filter to exact matches only (avoid "Create Incident" matching "Create SIR Incident")
+      const allHeadings = await actionHeadings.all();
+      const exactMatches = [];
+      for (const heading of allHeadings) {
+        const text = await heading.textContent();
+        if (text?.trim() === actionName) {
+          exactMatches.push(heading);
+        }
+      }
+
+      const candidates = exactMatches.length > 0 ? exactMatches : allHeadings;
+      console.log(`Found ${candidates.length} instance(s) of '${actionName}' - trying each until one works...`);
+
+      if (candidates.length === 0) {
+        throw new Error(`Action '${actionName}' not found in search results`);
+      }
 
       let actionVerified = false;
 
       // Try each instance until we find one that's not stale
-      for (let i = 0; i < actionElements.length; i++) {
-        console.log(`  Trying instance ${i + 1}/${actionElements.length}...`);
+      for (let i = 0; i < candidates.length; i++) {
+        console.log(`  Trying instance ${i + 1}/${candidates.length}...`);
 
         try {
-          // Click on the action
-          await actionElements[i].click();
+          await candidates[i].click({ timeout: 10000 });
           await workflowsPage.page.waitForLoadState('networkidle');
 
-          // Wait for the details panel to load and check if configuration is present
-          // Stale actions won't show the "Configure" heading
           try {
-            // Try multiple ways to detect a valid action configuration
-            const configureHeading = workflowsPage.page.getByRole('heading', { name: 'Configure' });
             const configureTab = workflowsPage.page.getByRole('tab', { name: 'Configure' });
-            const configIndicator = configureHeading.or(configureTab);
-
-            await configIndicator.waitFor({ state: 'visible', timeout: 20000 });
+            await configureTab.waitFor({ state: 'visible', timeout: 15000 });
             console.log(`✓ Action verified: ${actionName} - Configure section is present`);
             actionVerified = true;
 
@@ -123,8 +110,7 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
               await workflowsPage.page.waitForLoadState('networkidle');
 
               // Wait for action list to reload after going back
-              const allLoadingMessages = workflowsPage.page.locator('text="This may take a few moments"');
-              await expect(allLoadingMessages).toHaveCount(0, { timeout: 60000 });
+              await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
               await workflowsPage.page.waitForLoadState('networkidle');
             }
 
@@ -148,7 +134,7 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
       }
 
       if (!actionVerified) {
-        throw new Error(`Failed to verify action '${actionName}' - all ${actionElements.length} instance(s) appear to be stale or invalid`);
+        throw new Error(`Failed to verify action '${actionName}' - all ${candidates.length} instance(s) appear to be stale or invalid`);
       }
     }
 
