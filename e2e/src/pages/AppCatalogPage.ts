@@ -148,8 +148,7 @@ export class AppCatalogPage extends BasePage {
       await authTypeButton.waitFor({ state: 'visible', timeout: 15000 });
       this.logger.info('ServiceNow configuration form detected');
     } catch (error) {
-      this.logger.info('No ServiceNow configuration required - configuration form not found');
-      return;
+      throw new Error('This app should prompt for API credentials');
     }
 
     this.logger.info('ServiceNow configuration required, filling values');
