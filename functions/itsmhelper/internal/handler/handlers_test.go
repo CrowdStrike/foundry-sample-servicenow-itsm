@@ -834,7 +834,7 @@ func (s *HandlerTestSuite) TestHandleCreateIncident() {
 			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
 				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
 					// Verify that custom fields are included in the request payload
-					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
+					requestJSON, ok := params.Body.Resources[0].Config.JSON.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
 					}
@@ -1437,7 +1437,7 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 					}
 
 					// Verify that custom fields are included in the request payload
-					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
+					requestJSON, ok := params.Body.Resources[0].Config.JSON.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
 					}
