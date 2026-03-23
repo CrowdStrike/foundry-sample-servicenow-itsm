@@ -249,7 +249,7 @@ func (h *Handler) createIncident(
 				DefinitionID: &pluginDefIDServiceNow,
 				OperationID:  &operationID,
 				ConfigID:     &configID,
-				Request: &models.DomainRequest{
+				Config: &models.DomainConfigData{
 					JSON: requestPayload,
 				},
 			},
