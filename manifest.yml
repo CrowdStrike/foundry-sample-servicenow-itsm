@@ -9,6 +9,17 @@ ignored:
   - e2e
   - e2e/.+
   - run-e2e-local\.sh
+  - venv
+  - .*/venv/.*
+  - htmlcov
+  - .*/htmlcov/.*
+  - .*\.pyc$
+  - __pycache__
+  - .*/__pycache__/.*
+  - \.pytest_cache
+  - .*/\.pytest_cache/.*
+  - \.coverage$
+  - .*/test_.*\.py$
 ui:
   homepage: ""
   extensions: []
@@ -113,6 +124,8 @@ functions:
           tags:
             - ServiceNow Foundry
         permissions: []
+    # Change to 'python' for the Python implementation (using falconpy)
+    # Both main.py (Python) and main.go (Go) exist in the same directory
     language: go
 workflows: []
 parsers: []

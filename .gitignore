@@ -2,3 +2,15 @@
 go.sum
 .DS_Store
 functions/itsmhelper/itsmhelper
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+dist/
+build/
