@@ -31,8 +31,33 @@ The ServiceNow ITSM and SIR is a Foundry application that enables seamless integ
 ## Prerequisites
 
 * The Foundry CLI (instructions below).
-* Go v1.25+ (needed if modifying the app's functions). See https://go.dev/learn for installation instructions.
+* **For Go implementation**: Go v1.25+ (needed if modifying the app's Go functions). See https://go.dev/learn for installation instructions.
+* **For Python implementation**: Python 3.8+ (needed if modifying the app's Python functions). See https://www.python.org/downloads/ for installation instructions.
 * A ServiceNow instance with ITSM and/or SIR module installed.
+
+### Implementation Options
+
+This app is available in two implementations:
+
+- **Go (default)**: High-performance implementation using the gofalcon SDK
+- **Python**: Alternative implementation using the falconpy SDK
+
+Both implementations provide identical functionality. To switch between implementations, modify the `language` field in the `manifest.yml` file:
+
+```yaml
+# For Go implementation (default)
+language: go
+
+# For Python implementation
+language: python
+```
+
+**Python-specific setup**: If you're developing with the Python implementation, install the dependencies:
+
+```shell
+cd functions/itsmhelper
+pip install -r requirements.txt
+```
 
 ### Install the Foundry CLI
 
@@ -98,6 +123,42 @@ foundry apps release
 ```
 
 Next, go to **Foundry** > **App catalog**, find your app, and install it.
+
+## Testing
+
+### Python Unit Tests
+
+If you're working with the Python implementation, you can run the unit tests:
+
+```shell
+cd functions/itsmhelper
+python -m pytest test_main.py -v
+```
+
+To run with coverage:
+
+```shell
+python -m pytest test_main.py --cov=main --cov-report=html
+```
+
+### Go Unit Tests
+
+For the Go implementation:
+
+```shell
+cd functions/itsmhelper
+go test ./... -v
+```
+
+### End-to-End Tests
+
+The e2e tests work with both implementations:
+
+```shell
+cd e2e
+npm install
+npm test
+```
 
 ## About this sample app
 
