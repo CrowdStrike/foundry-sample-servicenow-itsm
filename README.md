@@ -32,7 +32,7 @@ The ServiceNow ITSM and SIR is a Foundry application that enables seamless integ
 
 * The Foundry CLI (instructions below).
 * **For Go implementation**: Go v1.25+ (needed if modifying the app's Go functions). See https://go.dev/learn for installation instructions.
-* **For Python implementation**: Python 3.8+ (needed if modifying the app's Python functions). See https://www.python.org/downloads/ for installation instructions.
+* **For Python implementation**: Python 3.13+ (needed if modifying the app's Python functions). See https://www.python.org/downloads/ for installation instructions.
 * A ServiceNow instance with ITSM and/or SIR module installed.
 
 ### Implementation Options
