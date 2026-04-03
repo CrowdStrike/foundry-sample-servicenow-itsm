@@ -96,13 +96,13 @@ class TestCheckExternalEntityExists(unittest.TestCase):
         mock_client = Mock()
         mock_logger = Mock()
 
-        # Mock successful response (bytes)
+        # Mock successful response (bytes on success)
         entity_record = {
             "internal_entity_id": "entity123",
             "external_entity_id": "ext123",
             "external_system_id": "servicenow_incident"
         }
-        mock_client.command.return_value = json.dumps(entity_record).encode('utf-8')
+        mock_client.GetObject.return_value = json.dumps(entity_record).encode('utf-8')
 
         exists, record = main.check_external_entity_exists(
             mock_client, mock_logger, "entity123", "servicenow_incident"
@@ -110,18 +110,17 @@ class TestCheckExternalEntityExists(unittest.TestCase):
 
         self.assertTrue(exists)
         self.assertEqual(record["external_entity_id"], "ext123")
-        mock_client.command.assert_called_once_with(
-            "GetObject",
+        mock_client.GetObject.assert_called_once_with(
             collection_name=main.COLLECTION_NAME_TRACKED_ENTITIES,
             object_key="servicenow_incident.entity123"
         )
 
-    def test_entity_not_exists_404_dict(self):
-        """SDK returns error dict (404 or masked 404) — treated as not found."""
+    def test_entity_not_exists_404(self):
+        """GetObject returns error dict on 404 — treated as not found."""
         mock_client = Mock()
         mock_logger = Mock()
 
-        mock_client.command.return_value = {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}}
+        mock_client.GetObject.return_value = {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}}
 
         exists, record = main.check_external_entity_exists(
             mock_client, mock_logger, "entity123", "servicenow_incident"
@@ -131,13 +130,13 @@ class TestCheckExternalEntityExists(unittest.TestCase):
         self.assertIsNone(record)
 
     def test_entity_not_exists_500(self):
-        """GetObject returns error dict with 500 — treated as not found."""
+        """GetObject returns error dict on 500 — treated as not found."""
         mock_client = Mock()
         mock_logger = Mock()
 
-        mock_client.command.return_value = {
+        mock_client.GetObject.return_value = {
             "status_code": 500, "headers": {},
-            "body": {"errors": [{"message": "'bytes' object has no attribute 'get'"}], "resources": []}
+            "body": {"errors": [{"message": "server error"}], "resources": []}
         }
 
         exists, record = main.check_external_entity_exists(
@@ -157,7 +156,7 @@ class TestCheckExternalEntityExists(unittest.TestCase):
             "external_entity_id": "ext123",
             "external_system_id": "other_system"
         }
-        mock_client.command.return_value = json.dumps(entity_record).encode('utf-8')
+        mock_client.GetObject.return_value = json.dumps(entity_record).encode('utf-8')
 
         exists, record = main.check_external_entity_exists(
             mock_client, mock_logger, "entity123", "servicenow_incident"
@@ -175,17 +174,16 @@ class TestCreateOrUpdateExternalEntityMapping(unittest.TestCase):
         mock_logger = Mock()
 
         # Mock successful PutObject response
-        mock_client.command.return_value = {"status_code": 201}
+        mock_client.PutObject.return_value = {"status_code": 201}
 
         main.create_or_update_external_entity_mapping(
             mock_client, mock_logger,
             "entity123", "ext123", "servicenow_incident"
         )
 
-        # Verify command was called with correct args
-        mock_client.command.assert_called_once()
-        call_args = mock_client.command.call_args
-        self.assertEqual(call_args[0][0], "PutObject")
+        # Verify PutObject was called with correct args
+        mock_client.PutObject.assert_called_once()
+        call_args = mock_client.PutObject.call_args
         self.assertEqual(call_args[1]["body"]["internal_entity_id"], "entity123")
         self.assertEqual(call_args[1]["body"]["external_entity_id"], "ext123")
         self.assertEqual(call_args[1]["body"]["external_system_id"], "servicenow_incident")
@@ -195,7 +193,7 @@ class TestCreateOrUpdateExternalEntityMapping(unittest.TestCase):
         mock_logger = Mock()
 
         # Mock failed PutObject response
-        mock_client.command.return_value = {"status_code": 500}
+        mock_client.PutObject.return_value = {"status_code": 500}
 
         with self.assertRaises(main.StorageError):
             main.create_or_update_external_entity_mapping(
@@ -211,11 +209,9 @@ class TestCheckThrottlingStore(unittest.TestCase):
         mock_client = Mock()
         mock_logger = Mock()
 
-        # GetObject returns 404 dict (not found), PutObject succeeds
-        mock_client.command.side_effect = [
-            {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}},
-            {"status_code": 201}
-        ]
+        # GetObject returns error dict (not found), PutObject succeeds
+        mock_client.GetObject.return_value = {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}}
+        mock_client.PutObject.return_value = {"status_code": 201}
 
         is_duplicate = main.check_throttling_store(
             mock_client, mock_logger,
@@ -223,21 +219,20 @@ class TestCheckThrottlingStore(unittest.TestCase):
         )
 
         self.assertFalse(is_duplicate)
-        self.assertEqual(mock_client.command.call_count, 2)
+        mock_client.GetObject.assert_called_once()
+        mock_client.PutObject.assert_called_once()
 
     def test_first_occurrence_500_creates_record(self):
-        """GetObject returns 500 error dict — still creates new record."""
+        """GetObject returns 500 error — still creates new record."""
         mock_client = Mock()
         mock_logger = Mock()
 
         # GetObject returns 500 error dict, PutObject succeeds
-        mock_client.command.side_effect = [
-            {
-                "status_code": 500, "headers": {},
-                "body": {"errors": [{"message": "'bytes' object has no attribute 'get'"}], "resources": []}
-            },
-            {"status_code": 201}
-        ]
+        mock_client.GetObject.return_value = {
+            "status_code": 500, "headers": {},
+            "body": {"errors": [{"message": "server error"}], "resources": []}
+        }
+        mock_client.PutObject.return_value = {"status_code": 201}
 
         is_duplicate = main.check_throttling_store(
             mock_client, mock_logger,
@@ -245,7 +240,8 @@ class TestCheckThrottlingStore(unittest.TestCase):
         )
 
         self.assertFalse(is_duplicate)
-        self.assertEqual(mock_client.command.call_count, 2)
+        mock_client.GetObject.assert_called_once()
+        mock_client.PutObject.assert_called_once()
 
     def test_duplicate_occurrence(self):
         mock_client = Mock()
@@ -253,7 +249,7 @@ class TestCheckThrottlingStore(unittest.TestCase):
 
         # GetObject succeeds (record exists as bytes)
         dedup_record = {"time_bucket": main.TIME_BUCKET_FOREVER}
-        mock_client.command.return_value = json.dumps(dedup_record).encode('utf-8')
+        mock_client.GetObject.return_value = json.dumps(dedup_record).encode('utf-8')
 
         is_duplicate = main.check_throttling_store(
             mock_client, mock_logger,
@@ -262,7 +258,8 @@ class TestCheckThrottlingStore(unittest.TestCase):
 
         self.assertTrue(is_duplicate)
         # Should only call GetObject, not PutObject
-        self.assertEqual(mock_client.command.call_count, 1)
+        mock_client.GetObject.assert_called_once()
+        mock_client.PutObject.assert_not_called()
 
     def test_invalid_time_bucket(self):
         mock_client = Mock()
@@ -351,11 +348,8 @@ class TestCheckIfExtEntityExistsHandler(unittest.TestCase):
         mock_client = Mock()
         mock_create_clients.return_value = (Mock(), mock_client)
 
-        # GetObject returns error dict (500 response)
-        mock_client.command.return_value = {
-            "status_code": 500, "headers": {},
-            "body": {"errors": [{"message": "'bytes' object has no attribute 'get'"}], "resources": []}
-        }
+        # GetObject returns error dict (404)
+        mock_client.GetObject.return_value = {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}}
 
         mock_request = Mock()
         mock_request.trace_id = "trace-123"
@@ -536,11 +530,8 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         mock_client = Mock()
         mock_create_clients.return_value = (mock_api_integrations, mock_client)
 
-        # GetObject returns 404 on entity check, PutObject succeeds for mapping
-        mock_client.command.side_effect = [
-            {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}},  # check_external_entity_exists
-            {"status_code": 201}  # create_or_update → PutObject
-        ]
+        # GetObject returns 404 on entity check
+        mock_client.GetObject.return_value = {"status_code": 404, "body": {}}
 
         # Mock successful ServiceNow response
         mock_api_integrations.execute_command.return_value = {
@@ -695,10 +686,8 @@ class TestThrottleHandler(unittest.TestCase):
         mock_create_clients.return_value = (Mock(), mock_client)
 
         # GetObject returns 404, PutObject succeeds
-        mock_client.command.side_effect = [
-            {"status_code": 404, "headers": {}, "body": {"errors": [], "resources": []}},  # GetObject → not found
-            {"status_code": 201}  # PutObject → created
-        ]
+        mock_client.GetObject.return_value = {"status_code": 404, "body": {}}
+        mock_client.PutObject.return_value = {"status_code": 201}
 
         mock_request = Mock()
         mock_request.trace_id = "trace-123"
@@ -714,7 +703,8 @@ class TestThrottleHandler(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.OK)
         self.assertTrue(response.body["allowed"])
         # Should have called GetObject then PutObject
-        self.assertEqual(mock_client.command.call_count, 2)
+        mock_client.GetObject.assert_called_once()
+        mock_client.PutObject.assert_called_once()
 
     @patch('main.create_falcon_clients')
     @patch('main.check_throttling_store')
