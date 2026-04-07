@@ -378,10 +378,10 @@ def check_if_ext_entity_exists_handler(req: Request, _config: Optional[Dict[str,
                 )]
             )
 
-        _, api_client = create_falcon_clients(logger)
+        _, custom_storage = create_falcon_clients(logger)
 
         exists, ext_record = check_external_entity_exists(
-            api_client, logger, internal_entity_id, external_system_id
+            custom_storage, logger, internal_entity_id, external_system_id
         )
 
         if not exists:
@@ -437,10 +437,10 @@ def create_entity_mapping_handler(req: Request, _config: Optional[Dict[str, obje
                 )]
             )
 
-        _, api_client = create_falcon_clients(logger)
+        _, custom_storage = create_falcon_clients(logger)
 
         create_or_update_external_entity_mapping(
-            api_client, logger,
+            custom_storage, logger,
             internal_entity_id, external_entity_id, external_system_id
         )
 
@@ -503,11 +503,11 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
                 )]
             )
 
-        api_integrations, api_client = create_falcon_clients(logger)
+        api_integrations, custom_storage = create_falcon_clients(logger)
 
         # Check if ticket already exists
         exists, ext_record = check_external_entity_exists(
-            api_client, logger, entity_id, external_system_id
+            custom_storage, logger, entity_id, external_system_id
         )
 
         if exists:
@@ -591,7 +591,7 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
         # Store entity mapping
         if snow_sys_id:
             create_or_update_external_entity_mapping(
-                api_client, logger,
+                custom_storage, logger,
                 entity_id, snow_sys_id, external_system_id
             )
 
@@ -684,10 +684,10 @@ def throttle_handler(req: Request, _config: Optional[Dict[str, object]], logger:
                 )]
             )
 
-        _, api_client = create_falcon_clients(logger)
+        _, custom_storage = create_falcon_clients(logger)
 
         is_duplicate = check_throttling_store(
-            api_client, logger,
+            custom_storage, logger,
             internal_entity_id, dedup_obj_type, dedup_obj_id, time_bucket
         )
 
