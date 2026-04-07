@@ -81,9 +81,9 @@ def create_falcon_clients(logger: Logger) -> Tuple[APIIntegrations, CustomStorag
     """
     try:
         api_integrations = APIIntegrations()
-        collections = CustomStorage()
+        custom_storage = CustomStorage()
 
-        return api_integrations, collections
+        return api_integrations, custom_storage
 
     except Exception as e:
         logger.error(f"Error creating Falcon clients: {str(e)}", exc_info=True)
@@ -162,7 +162,7 @@ def calculate_time_bucket(time_bucket: str) -> str:
 
 
 def check_external_entity_exists(
-    collections: CustomStorage,
+    custom_storage: CustomStorage,
     _logger: Logger,
     internal_entity_id: str,
     external_system_id: str
@@ -171,7 +171,7 @@ def check_external_entity_exists(
     Check if an external entity mapping exists.
 
     Args:
-        collections: CustomStorage client
+        custom_storage: CustomStorage client
         logger: Logger instance
         internal_entity_id: Internal entity ID
         external_system_id: External system ID
@@ -181,7 +181,7 @@ def check_external_entity_exists(
     """
     key = create_tracked_entity_key(external_system_id, internal_entity_id)
 
-    response = collections.GetObject(
+    response = custom_storage.GetObject(
         collection_name=COLLECTION_NAME_TRACKED_ENTITIES,
         object_key=key
     )
@@ -200,7 +200,7 @@ def check_external_entity_exists(
 
 
 def create_or_update_external_entity_mapping(
-    collections: CustomStorage,
+    custom_storage: CustomStorage,
     logger: Logger,
     internal_entity_id: str,
     external_entity_id: str,
@@ -210,7 +210,7 @@ def create_or_update_external_entity_mapping(
     Create or update an external entity mapping.
 
     Args:
-        collections: CustomStorage client
+        custom_storage: CustomStorage client
         logger: Logger instance
         internal_entity_id: Internal entity ID
         external_entity_id: External entity ID
@@ -225,7 +225,7 @@ def create_or_update_external_entity_mapping(
             "external_system_id": external_system_id
         }
 
-        response = collections.PutObject(
+        response = custom_storage.PutObject(
             collection_name=COLLECTION_NAME_TRACKED_ENTITIES,
             object_key=key,
             body=record
@@ -250,7 +250,7 @@ def create_or_update_external_entity_mapping(
 
 
 def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-    collections: CustomStorage,
+    custom_storage: CustomStorage,
     logger: Logger,
     internal_entity_id: str,
     dedup_obj_type: str,
@@ -261,7 +261,7 @@ def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-posit
     Check if a combination of IDs already exists in throttling store.
 
     Args:
-        collections: CustomStorage client
+        custom_storage: CustomStorage client
         logger: Logger instance
         internal_entity_id: Internal entity ID
         dedup_obj_type: Deduplication object type
@@ -286,7 +286,7 @@ def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-posit
     dedup_key = hashlib.md5(combined.encode()).hexdigest()
 
     # Try to get the object — success means duplicate exists
-    response = collections.GetObject(
+    response = custom_storage.GetObject(
         collection_name=COLLECTION_NAME_DEDUP_STORE,
         object_key=dedup_key
     )
@@ -303,7 +303,7 @@ def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-posit
 
     # Store new dedup record
     new_record = {"time_bucket": time_bucket}
-    response = collections.PutObject(
+    response = custom_storage.PutObject(
         collection_name=COLLECTION_NAME_DEDUP_STORE,
         object_key=dedup_key,
         body=new_record
