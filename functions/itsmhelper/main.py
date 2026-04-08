@@ -27,7 +27,7 @@ from typing import Dict, Any, Optional, Tuple
 from http import HTTPStatus
 
 from crowdstrike.foundry.function import Function, Request, Response, APIError
-from falconpy import APIIntegrations, APIHarnessV2
+from falconpy import APIIntegrations, CustomStorage
 
 # Initialize the function instance
 FUNC = Function.instance()
@@ -63,7 +63,7 @@ class FalconClientError(ITSMError):
     """Exception for Falcon client errors."""
 
 
-def create_falcon_clients(logger: Logger) -> Tuple[APIIntegrations, APIHarnessV2]:
+def create_falcon_clients(logger: Logger) -> Tuple[APIIntegrations, CustomStorage]:
     """
     Create Falcon API clients.
 
@@ -74,16 +74,16 @@ def create_falcon_clients(logger: Logger) -> Tuple[APIIntegrations, APIHarnessV2
         logger: Logger instance for logging
 
     Returns:
-        Tuple of (APIIntegrations client, APIHarnessV2 client)
+        Tuple of (APIIntegrations client, CustomStorage client)
 
     Raises:
         FalconClientError: If client creation fails
     """
     try:
         api_integrations = APIIntegrations()
-        api_client = APIHarnessV2()
+        custom_storage = CustomStorage()
 
-        return api_integrations, api_client
+        return api_integrations, custom_storage
 
     except Exception as e:
         logger.error(f"Error creating Falcon clients: {str(e)}", exc_info=True)
@@ -162,7 +162,7 @@ def calculate_time_bucket(time_bucket: str) -> str:
 
 
 def check_external_entity_exists(
-    api_client: APIHarnessV2,
+    custom_storage: CustomStorage,
     _logger: Logger,
     internal_entity_id: str,
     external_system_id: str
@@ -171,7 +171,7 @@ def check_external_entity_exists(
     Check if an external entity mapping exists.
 
     Args:
-        api_client: APIHarnessV2 client
+        custom_storage: CustomStorage client
         logger: Logger instance
         internal_entity_id: Internal entity ID
         external_system_id: External system ID
@@ -181,14 +181,12 @@ def check_external_entity_exists(
     """
     key = create_tracked_entity_key(external_system_id, internal_entity_id)
 
-    response = api_client.command(
-        "GetObject",
+    response = custom_storage.GetObject(
         collection_name=COLLECTION_NAME_TRACKED_ENTITIES,
         object_key=key
     )
 
     # GetObject returns bytes on success, dict on error.
-    # Decode attempt distinguishes success from any error.
     try:
         ext_record = json.loads(response.decode('utf-8'))
     except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
@@ -202,7 +200,7 @@ def check_external_entity_exists(
 
 
 def create_or_update_external_entity_mapping(
-    api_client: APIHarnessV2,
+    custom_storage: CustomStorage,
     logger: Logger,
     internal_entity_id: str,
     external_entity_id: str,
@@ -212,7 +210,7 @@ def create_or_update_external_entity_mapping(
     Create or update an external entity mapping.
 
     Args:
-        api_client: APIHarnessV2 client
+        custom_storage: CustomStorage client
         logger: Logger instance
         internal_entity_id: Internal entity ID
         external_entity_id: External entity ID
@@ -227,8 +225,7 @@ def create_or_update_external_entity_mapping(
             "external_system_id": external_system_id
         }
 
-        response = api_client.command(
-            "PutObject",
+        response = custom_storage.PutObject(
             collection_name=COLLECTION_NAME_TRACKED_ENTITIES,
             object_key=key,
             body=record
@@ -253,7 +250,7 @@ def create_or_update_external_entity_mapping(
 
 
 def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-    api_client: APIHarnessV2,
+    custom_storage: CustomStorage,
     logger: Logger,
     internal_entity_id: str,
     dedup_obj_type: str,
@@ -264,7 +261,7 @@ def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-posit
     Check if a combination of IDs already exists in throttling store.
 
     Args:
-        api_client: APIHarnessV2 client
+        custom_storage: CustomStorage client
         logger: Logger instance
         internal_entity_id: Internal entity ID
         dedup_obj_type: Deduplication object type
@@ -289,14 +286,12 @@ def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-posit
     dedup_key = hashlib.md5(combined.encode()).hexdigest()
 
     # Try to get the object — success means duplicate exists
-    response = api_client.command(
-        "GetObject",
+    response = custom_storage.GetObject(
         collection_name=COLLECTION_NAME_DEDUP_STORE,
         object_key=dedup_key
     )
 
     # GetObject returns bytes on success, dict on error.
-    # Decode attempt distinguishes success from any error.
     try:
         json.loads(response.decode('utf-8'))
         return True  # Record exists, it's a duplicate
@@ -308,8 +303,7 @@ def check_throttling_store(  # pylint: disable=too-many-arguments,too-many-posit
 
     # Store new dedup record
     new_record = {"time_bucket": time_bucket}
-    response = api_client.command(
-        "PutObject",
+    response = custom_storage.PutObject(
         collection_name=COLLECTION_NAME_DEDUP_STORE,
         object_key=dedup_key,
         body=new_record
@@ -384,10 +378,10 @@ def check_if_ext_entity_exists_handler(req: Request, _config: Optional[Dict[str,
                 )]
             )
 
-        _, api_client = create_falcon_clients(logger)
+        _, custom_storage = create_falcon_clients(logger)
 
         exists, ext_record = check_external_entity_exists(
-            api_client, logger, internal_entity_id, external_system_id
+            custom_storage, logger, internal_entity_id, external_system_id
         )
 
         if not exists:
@@ -443,10 +437,10 @@ def create_entity_mapping_handler(req: Request, _config: Optional[Dict[str, obje
                 )]
             )
 
-        _, api_client = create_falcon_clients(logger)
+        _, custom_storage = create_falcon_clients(logger)
 
         create_or_update_external_entity_mapping(
-            api_client, logger,
+            custom_storage, logger,
             internal_entity_id, external_entity_id, external_system_id
         )
 
@@ -509,11 +503,11 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
                 )]
             )
 
-        api_integrations, api_client = create_falcon_clients(logger)
+        api_integrations, custom_storage = create_falcon_clients(logger)
 
         # Check if ticket already exists
         exists, ext_record = check_external_entity_exists(
-            api_client, logger, entity_id, external_system_id
+            custom_storage, logger, entity_id, external_system_id
         )
 
         if exists:
@@ -597,7 +591,7 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
         # Store entity mapping
         if snow_sys_id:
             create_or_update_external_entity_mapping(
-                api_client, logger,
+                custom_storage, logger,
                 entity_id, snow_sys_id, external_system_id
             )
 
@@ -690,10 +684,10 @@ def throttle_handler(req: Request, _config: Optional[Dict[str, object]], logger:
                 )]
             )
 
-        _, api_client = create_falcon_clients(logger)
+        _, custom_storage = create_falcon_clients(logger)
 
         is_duplicate = check_throttling_store(
-            api_client, logger,
+            custom_storage, logger,
             internal_entity_id, dedup_obj_type, dedup_obj_id, time_bucket
         )
 
