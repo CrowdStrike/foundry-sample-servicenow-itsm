@@ -4,7 +4,6 @@
 
 import { Page } from '@playwright/test';
 import { BasePage } from './BasePage';
-import { RetryHandler } from '../utils/SmartWaiter';
 import { config } from '../config/TestConfig';
 
 export class AppCatalogPage extends BasePage {
@@ -159,16 +158,22 @@ export class AppCatalogPage extends BasePage {
     this.logger.debug('Filled Configuration name');
 
     // Step 2: Select Basic Authentication from dropdown
-    this.logger.debug('Clicking authentication type dropdown');
+    // falcon-select only responds to keyboard navigation, not .click() on options
+    this.logger.debug('Selecting Basic Authentication via keyboard');
     await authTypeButton.click();
-
-    const basicAuthOption = this.page.getByRole('option', { name: 'Basic Authentication' });
-    await this.waiter.waitForVisible(basicAuthOption, { description: 'Basic Authentication option' });
-    await basicAuthOption.click();
+    const listbox = this.page.getByRole('listbox', { name: /Authentication Type/i });
+    await listbox.waitFor({ state: 'visible', timeout: 5000 });
+    const options = listbox.getByRole('option');
+    const count = await options.count();
+    for (let i = 0; i < count; i++) await listbox.press('ArrowUp');
+    for (let i = 0; i < count; i++) {
+      if ((await options.nth(i).textContent())?.trim() === 'Basic Authentication') break;
+      await listbox.press('ArrowDown');
+    }
+    await listbox.press('Enter');
     this.logger.debug('Selected Basic Authentication');
 
-    // Wait for form to update after selecting auth type
-    await this.waiter.delay(1000);
+    await this.page.waitForLoadState('networkidle');
 
     // Step 3: Fill ServiceNow Instance URL (use env var or error)
     const serviceNowUrl = process.env.SERVICENOW_INSTANCE_URL;
