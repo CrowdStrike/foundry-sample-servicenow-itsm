@@ -8,6 +8,13 @@ updates:
       day: "monday"
       time: "14:00"
       timezone: "UTC"
+  - package-ecosystem: "pip"
+    directory: "/functions/itsmhelper/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "14:00"
+      timezone: "UTC"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
