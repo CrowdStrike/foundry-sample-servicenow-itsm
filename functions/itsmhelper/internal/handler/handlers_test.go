@@ -834,7 +834,7 @@ func (s *HandlerTestSuite) TestHandleCreateIncident() {
 			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
 				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
 					// Verify that custom fields are included in the request payload
-					requestJSON, ok := params.Body.Resources[0].Config.JSON.(map[string]interface{})
+					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
 					}
@@ -1437,7 +1437,7 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 					}
 
 					// Verify that custom fields are included in the request payload
-					requestJSON, ok := params.Body.Resources[0].Config.JSON.(map[string]interface{})
+					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
 					if !ok {
 						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
 					}
@@ -1737,6 +1737,119 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 				s.True(exists, "Expected key %q not found in response", k)
 				s.Equal(v, actualVal, "For key %q, expected value should match actual value", k)
 			}
+		})
+	}
+}
+
+// TestExecuteCommandPayloadJSON verifies the JSON wire format of the execute command request.
+func (s *HandlerTestSuite) TestExecuteCommandPayloadJSON() {
+	tests := []struct {
+		name         string
+		request      CreateIncidentRequest
+		handler      func(h *Handler, req fdk.RequestOf[CreateIncidentRequest]) fdk.Response
+		expectedJSON string
+	}{
+		{
+			name: "CreateIncident",
+			request: CreateIncidentRequest{
+				ConfigID:         "config123",
+				EntityID:         "entity123",
+				ShortDescription: "Test incident",
+			},
+			handler: func(h *Handler, req fdk.RequestOf[CreateIncidentRequest]) fdk.Response {
+				return h.HandleCreateIncident(context.Background(), req, fdk.WorkflowCtx{})
+			},
+			expectedJSON: `{
+				"definition_id": "` + pluginDefIDServiceNow + `",
+				"operation_id": "` + pluginOpIDServiceNowCreateIncident + `",
+				"config_id": "config123",
+				"config_auth_type": null,
+				"id": null,
+				"version": null,
+				"request": {
+					"json": {
+						"short_description": "Test incident"
+					}
+				}
+			}`,
+		},
+		{
+			name: "CreateSIRIncident",
+			request: CreateIncidentRequest{
+				ConfigID:         "config456",
+				EntityID:         "entity456",
+				ShortDescription: "Test SIR incident",
+			},
+			handler: func(h *Handler, req fdk.RequestOf[CreateIncidentRequest]) fdk.Response {
+				return h.HandleCreateSIRIncident(context.Background(), req, fdk.WorkflowCtx{})
+			},
+			expectedJSON: `{
+				"definition_id": "` + pluginDefIDServiceNow + `",
+				"operation_id": "` + pluginOpIDServiceNowCreateSIRIncident + `",
+				"config_id": "config456",
+				"config_auth_type": null,
+				"id": null,
+				"version": null,
+				"request": {
+					"json": {
+						"short_description": "Test SIR incident"
+					}
+				}
+			}`,
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.mockStorage.GetObjectFunc = func(params *custom_storage.GetObjectParams, writer io.Writer, opts ...custom_storage.ClientOption) (*custom_storage.GetObjectOK, error) {
+				return nil, fmt.Errorf("status 404")
+			}
+			s.mockStorage.PutObjectFunc = func(params *custom_storage.PutObjectParams, opts ...custom_storage.ClientOption) (*custom_storage.PutObjectOK, error) {
+				return &custom_storage.PutObjectOK{}, nil
+			}
+
+			s.mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+				resource := params.Body.Resources[0]
+				actualJSON, err := json.Marshal(resource)
+				s.Require().NoError(err)
+
+				var expected, actual interface{}
+				s.Require().NoError(json.Unmarshal([]byte(tc.expectedJSON), &expected))
+				s.Require().NoError(json.Unmarshal(actualJSON, &actual))
+				s.Equal(expected, actual, "execute command payload JSON must match expected structure")
+
+				result := map[string]interface{}{
+					"sys_id":         "abc123",
+					"number":         "INC0010099",
+					"sys_class_name": "incident",
+				}
+				return &api_integrations.ExecuteCommandOK{
+					Payload: &models.DomainExecuteCommandResultsV1{
+						Resources: []*models.DomainExecuteCommandResultV1{
+							{ResponseBody: map[string]interface{}{"result": result}},
+						},
+					},
+				}, nil
+			}
+
+			mockClientBuilder := func(token string, logger *slog.Logger) (*client.CrowdStrikeAPISpecification, string, error) {
+				mockClient := &client.CrowdStrikeAPISpecification{}
+				mockClient.CustomStorage = s.mockStorage
+				mockClient.APIIntegrations = s.mockAPIIntegrations
+				return mockClient, "us-1", nil
+			}
+
+			handler := &Handler{
+				logger:           s.logger,
+				falconClientFunc: mockClientBuilder,
+			}
+
+			req := fdk.RequestOf[CreateIncidentRequest]{
+				Body:        tc.request,
+				AccessToken: "test-token",
+			}
+			response := tc.handler(handler, req)
+			s.Equal(201, response.Code)
 		})
 	}
 }
