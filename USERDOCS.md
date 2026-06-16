@@ -458,7 +458,7 @@ This configuration will allow users to select values from the custom table when 
 
 ### OAuth 2.0 Client Credentials configuration
 
-This application support both Basic Auth and OAuth 2.0 Client Credentials grant.
+This application supports Basic Auth, OAuth 2.0 Client Credentials, and OAuth 2.0 JWT Bearer grant.
 
 #### Prerequisites
 - **Set system property**: `glide.oauth.inbound.client.credential.grant_type.enabled` = `true`. This property enables "Client Credentials" grant type in ServiceNow ([reference](https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1645212)).
@@ -469,3 +469,69 @@ This application support both Basic Auth and OAuth 2.0 Client Credentials grant.
 3. Complete required fields (Redirect URL and Login URL not needed)
 4. Add **OAuth Application User** field to the form
 5. **Assign a service account** to the OAuth Application User field
+
+### OAuth 2.0 JWT Bearer configuration
+
+The JWT Bearer grant enables authentication using a signed JWT assertion instead of user credentials. This is suited for machine-to-machine integrations where interactive login is not possible.
+
+For full details, see the [ServiceNow documentation](https://www.servicenow.com/docs/r/zurich/platform-security/authentication/create-jwt-endpoint.html).
+
+#### Prerequisites
+- ServiceNow instance with OAuth enabled (admin role required)
+- An RSA key pair (supported algorithms: RS256, RS384, RS512, ES256, ES384, ES512)
+
+#### Generating an RSA Key Pair
+```bash
+# Generate private key
+openssl genrsa -out private_key.pem 2048
+
+# Extract public key
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+```
+
+#### Configuring ServiceNow
+
+1. **Upload the public key** to the `sys_certificate` table in your ServiceNow instance.
+
+2. **Create the OAuth JWT endpoint:**
+   1. Navigate to **System OAuth → Application Registry**
+   2. Select **Create an OAuth JWT API endpoint for external clients**
+   3. Complete the form:
+      - **Name**: A descriptive name for the application
+      - **Client ID**: Auto-generated unique ID (used as the `aud` claim in the JWT)
+      - **Client Secret**: Auto-generated or custom value (can be omitted for public clients)
+      - **User Field**: Field in the User (`sys_user`) table used to match the `sub` claim (e.g., Email)
+      - **Enable JTI Verification**: Requires a unique token for every exchange (recommended)
+      - **Access Token Lifespan**: Duration in seconds that the issued access token is valid
+   4. Save the form.
+
+3. **Add a JWT Verifier Map** (related list on the OAuth JWT record):
+   - **Name**: A descriptive name
+   - **Kid**: Key ID that matches the `kid` header in the JWT
+   - **Sys certificate**: Select the certificate uploaded in step 1
+
+4. **Add Claim Validations** (optional, via the OAuth JWT Claim Validations related list):
+   - Add any custom claims your JWT includes. The standard claims (`iss`, `aud`, `sub`, `exp`) do not need entries here.
+   - If `iss` differs from `aud` (Client ID), add `iss` to the claim validations.
+
+#### JWT Claims
+
+The JWT must contain the following claims:
+| Claim | Description |
+|-------|-------------|
+| `aud` | Must match the **Client ID** of the ServiceNow OAuth application |
+| `sub` | User identifier (e.g., email) matching the configured **User Field** |
+| `iss` | Issuer identifier; recommended to match the Client ID |
+| `exp` | Token expiration time |
+| `kid` | (header) Key ID matching the JWT Verifier Map entry |
+
+#### Configuring the Connection in Falcon
+
+When creating the ServiceNow connection, select **OAuth 2.0 JWT Bearer** and provide:
+- **Client ID**: The Client ID from the ServiceNow OAuth JWT application
+- **Client Secret**: The Client Secret (can be omitted if Public Client is enabled in ServiceNow)
+- **Private Key PEM file**: Upload your `private_key.pem` file
+- **Key ID (kid claim)**: Must match the **Kid** field in the ServiceNow JWT Verifier Map
+- **Subject (sub claim)**: The user identifier matching the ServiceNow User Field (e.g., `admin@example.com`)
+- **Audience (aud claim)**: Must match the ServiceNow OAuth application's **Client ID**
+- **Issuer (iss claim)**: Must match the issuer configured in ServiceNow (typically the Client ID)
