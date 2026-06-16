@@ -529,7 +529,7 @@ The JWT must contain the following claims:
 
 When creating the ServiceNow connection, select **OAuth 2.0 JWT Bearer** and provide:
 - **Client ID**: The Client ID from the ServiceNow OAuth JWT application
-- **Client Secret**: The Client Secret (can be omitted if Public Client is enabled in ServiceNow)
+- **Client Secret**: The Client Secret from the ServiceNow OAuth JWT application
 - **Private Key PEM file**: Upload your `private_key.pem` file
 - **Key ID (kid claim)**: Must match the **Kid** field in the ServiceNow JWT Verifier Map
 - **Subject (sub claim)**: The user identifier matching the ServiceNow User Field (e.g., `admin@example.com`)
