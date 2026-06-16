@@ -510,10 +510,6 @@ openssl rsa -in private_key.pem -pubout -out public_key.pem
    - **Kid**: Key ID that matches the `kid` header in the JWT
    - **Sys certificate**: Select the certificate uploaded in step 1
 
-4. **Add Claim Validations** (optional, via the OAuth JWT Claim Validations related list):
-   - Add any custom claims your JWT includes. The standard claims (`iss`, `aud`, `sub`, `exp`) do not need entries here.
-   - If `iss` differs from `aud` (Client ID), add `iss` to the claim validations.
-
 #### JWT Claims
 
 The JWT must contain the following claims:
