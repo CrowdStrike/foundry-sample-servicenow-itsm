@@ -13,6 +13,7 @@ The ServiceNow ITSM and SIR App is a Foundry application that facilitates integr
 ## Authentication Support
 - Basic Authentication
 - OAuth 2.0 Client Credentials grant
+- OAuth 2.0 JWT Bearer grant
 
 ## Documentation
 - The source code for this app can be found on GitHub: [https://github.com/CrowdStrike/foundry-sample-servicenow-itsm](https://github.com/CrowdStrike/foundry-sample-servicenow-itsm)
