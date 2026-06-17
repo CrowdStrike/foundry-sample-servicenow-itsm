@@ -94,7 +94,56 @@ This action creates a Security Incident Response (SIR) incident in ServiceNow. I
 **Response**:
 - Same structure as Create Incident response
 
-### 5. Throttle
+### 5. Update Incident
+**Name**: `ITSM Helper - Update Incident`  
+**Handler**: `HandleUpdateIncident`  
+**API Path**: `/update_incident`  
+
+**Description**:  
+This action updates an existing standard incident in ServiceNow, identified by its `sys_id`. Like the create actions, it flattens the `custom_fields` JSON string into top-level fields before sending to ServiceNow, allowing arbitrary custom fields to be updated without editing the API integration definition. All field updates are optional — only the fields provided are sent.
+
+**Schema Files**:
+- Request Schema: [update_incident_req_schema.json](functions/itsmhelper/schemas/update_incident_req_schema.json)
+- Response Schema: [update_incident_resp_schema.json](functions/itsmhelper/schemas/update_incident_resp_schema.json)
+
+**Request Parameters**:
+- `config_id` (string, required): Configuration ID for the ServiceNow integration
+- `sys_id` (string, required): The unique identifier (sys_id) of the ServiceNow incident to update (passed as a path parameter)
+- `short_description` (string, optional): Brief description of the incident
+- `assignment_group` (string, optional): Group to assign the incident to
+- `category` (string, optional): Incident category
+- `description` (string, optional): Detailed description
+- `impact` (string, optional): Impact level
+- `severity` (string, optional): Severity level
+- `state` (string, optional): Incident state
+- `urgency` (string, optional): Urgency level
+- `work_notes` (string, optional): Additional notes
+- `custom_fields` (string, optional): JSON string containing custom ServiceNow fields as key-value pairs (e.g., `{"u_custom_field1": "value1", "u_affected_systems": 3}`)
+
+**Response**:
+- `ticket_id` (string): The ServiceNow ticket ID (sys_id)
+- `ticket_type` (string): The type of ticket updated (`incident`)
+- `number` (string): The ServiceNow ticket number
+
+### 6. Update SIR Incident
+**Name**: `ITSM Helper - Update SIR Incident`  
+**Handler**: `HandleUpdateSIRIncident`  
+**API Path**: `/update_sir_incident`  
+
+**Description**:  
+This action updates an existing Security Incident Response (SIR) incident in ServiceNow, identified by its `sys_id`. It functions similarly to the Update Incident handler but targets the `sn_si_incident` table and exposes SIR-specific category, severity, and state options.
+
+**Schema Files**:
+- Request Schema: [update_sir_incident_req_schema.json](functions/itsmhelper/schemas/update_sir_incident_req_schema.json)
+- Response Schema: [update_sir_incident_resp_schema.json](functions/itsmhelper/schemas/update_sir_incident_resp_schema.json)
+
+**Request Parameters**:
+- Same as Update Incident, but with different category and severity options specific to SIR incidents
+
+**Response**:
+- Same structure as Update Incident response (`ticket_type` is `sn_si_incident`)
+
+### 7. Throttle
 **Name**: `ITSM Helper - Throttle`  
 **Handler**: `HandleThrottle`  
 **API Path**: `/throttle`  
@@ -119,9 +168,11 @@ This action provides throttling functionality to control the flow of updates in 
 
 All actions are part of a single function called `itsm_helper`. This function is exposed to Workflow through the integrations listed above.
 
-The ServiceNow ITSM and SIR App uses the ServiceNow API integration (Name: `servicenow-foundry`, defined in [api-integrations/servicenow.json](api-integrations/servicenow.json)) to communicate with ServiceNow. It supports two main operations:
+The ServiceNow ITSM and SIR App uses the ServiceNow API integration (Name: `servicenow-foundry`, defined in [api-integrations/servicenow.json](api-integrations/servicenow.json)) to communicate with ServiceNow. It supports the following main operations:
 - `create_incident`: Creates a standard incident in ServiceNow
 - `create_sn_si_incident`: Creates a Security Incident Response (SIR) incident in ServiceNow
+- `update_incident`: Updates a standard incident in ServiceNow
+- `update_sn_si_incident`: Updates a Security Incident Response (SIR) incident in ServiceNow
 
 The app also uses two custom collections for storage:
 1. `tracked_entities`: Stores mappings between CrowdStrike entities and ServiceNow tickets
@@ -135,12 +186,12 @@ The handlers in this project connect to ServiceNow through the OpenAPI Specifica
 
 2. The handlers reference this integration by name when communicating with ServiceNow through the Falcon API Integrations client.
 
-3. When creating incidents, the handlers specify which operation to execute:
-   - For standard incidents: `create_incident`
-   - For SIR incidents: `create_sn_si_incident`
+3. When creating or updating incidents, the handlers specify which operation to execute:
+   - For standard incidents: `create_incident` / `update_incident`
+   - For SIR incidents: `create_sn_si_incident` / `update_sn_si_incident`
 
 4. These operations are defined in the OAS file and map to specific ServiceNow API endpoints:
-   - Standard incidents: `/api/now/table/incident` (POST)
-   - SIR incidents: `/api/now/table/sn_si_incident` (POST)
+   - Standard incidents: `/api/now/table/incident` (POST), `/api/now/table/incident/{sys_id}` (PATCH)
+   - SIR incidents: `/api/now/table/sn_si_incident` (POST), `/api/now/table/sn_si_incident/{sys_id}` (PATCH)
 
 This integration allows the app to create and manage tickets in ServiceNow while maintaining mappings between CrowdStrike entities and ServiceNow tickets in the custom storage.

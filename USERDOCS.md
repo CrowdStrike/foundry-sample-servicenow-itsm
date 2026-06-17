@@ -90,6 +90,7 @@ To implement alert synchronization, you'll need to create workflows that use the
 
 - **Check If External Entity Exists**: Checks if a ticket already exists for a given CrowdStrike entity
 - **Create Incident** or **Create SIR Incident**: Creates a new ticket in ServiceNow
+- **Update Incident** or **Update SIR Incident**: Updates an existing ticket in ServiceNow (identified by its `sys_id`)
 
 #### Alert Creation - Workflow
 
@@ -109,12 +110,12 @@ You can customize these fields in your workflow to ensure that the created ticke
 
 #### Alert Updates - Separate Workflow
 
-For existing alerts, a completely separate workflow from alert creation is used. This workflow is triggered specifically by "Audit Event > Alert" events and uses the ServiceNow API integration directly to update the ticket with new information. This can be done by:
+For existing alerts, a completely separate workflow from alert creation is used. This workflow is triggered specifically by "Audit Event > Alert" events and uses the **Update Incident** or **Update SIR Incident** ITSM Helper action to update the ticket with new information. Like the create actions, these update actions support a `custom_fields` JSON string for setting arbitrary ServiceNow fields without editing the API integration. This can be done by:
 
 1. Create a workflow in Falcon Fusion that triggers on Audit Event related to tracked entities (e.g., Alerts)
-2. Using the "Check If External Entity Exists" action to get the ticket ID related to this entity (e.g., Alert)
+2. Using the "Check If External Entity Exists" action to get the ticket ID (`sys_id`) related to this entity (e.g., Alert)
    <br><img alt="Alert update trigger workflow view" src="images/userdocs/oneway_alert_sync_update_trigger_view.png" width="800"/>
-3. Using the ServiceNow API integration to update the ticket with the new information
+3. Using the "Update Incident" (or "Update SIR Incident") action with the retrieved `sys_id` and `config_id` to update the ticket with the new information
    <br><img alt="ServiceNow API action for updating ticket" src="images/userdocs/oneway_alert_sync_update_close_action.png" width="800"/><br>
 4. The complete alert update workflow overview:
    <br><img alt="Complete alert update workflow overview" src="images/userdocs/oneway_alert_sync_update_overview.png" width="1200"/><br>
@@ -307,7 +308,7 @@ When implemented correctly, selecting a value in the parent field will automatic
 
 ServiceNow often includes custom fields (prefixed with "u_" or "x_") that are specific to an organization's implementation. The ServiceNow ITSM and SIR app provides two approaches to incorporate these custom fields:
 
-1. **Using the "Custom Fields JSON (advanced)" parameter**: Pass any custom fields as a JSON string without modifying the app
+1. **Using the "Custom Fields JSON (advanced)" parameter**: Pass any custom fields as a JSON string without modifying the app. This parameter is supported by the Create Incident, Create SIR Incident, Update Incident, and Update SIR Incident actions.
    ```json
    {
      "u_custom_field1": "value1",
@@ -335,6 +336,7 @@ Choose the first approach for flexibility and simplicity, especially for dynamic
    - Add the custom field to the appropriate schema file:
      - `functions/itsmhelper/schemas/create_incident_req_schema.json` for regular incidents
      - `functions/itsmhelper/schemas/create_sir_incident_req_schema.json` for SIR incidents
+     - `functions/itsmhelper/schemas/update_incident_req_schema.json` / `update_sir_incident_req_schema.json` if the field should also be available on the update actions
    - Include the field in the `x-cs-order` array to control its position in the UI
 
 4. **Deploy the Updated Integration**:

@@ -469,18 +469,6 @@
               }
             }
           }
-        },
-        "x-cs-operation-config": {
-          "timeout_seconds": 30,
-          "workflow": {
-            "description": "Update Incident - Foundry",
-            "expose_to_workflow": true,
-            "name": "Update ServiceNow Incident - Foundry",
-            "system": false,
-            "tags": [
-              "ServiceNow Foundry"
-            ]
-          }
         }
       }
     },
@@ -923,18 +911,6 @@
                 }
               }
             }
-          }
-        },
-        "x-cs-operation-config": {
-          "timeout_seconds": 30,
-          "workflow": {
-            "description": "Update SIR Incident - Foundry",
-            "expose_to_workflow": true,
-            "name": "Update ServiceNow SIR Incident - Foundry",
-            "system": false,
-            "tags": [
-              "ServiceNow Foundry"
-            ]
           }
         }
       }
