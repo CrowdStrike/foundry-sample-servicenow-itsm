@@ -1,10 +1,10 @@
 module itsmhelper
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/CrowdStrike/foundry-fn-go v0.24.1
-	github.com/crowdstrike/gofalcon v0.20.1
+	github.com/crowdstrike/gofalcon v0.21.0
 	github.com/go-openapi/runtime v0.32.4
 	github.com/stretchr/testify v1.11.1
 )
