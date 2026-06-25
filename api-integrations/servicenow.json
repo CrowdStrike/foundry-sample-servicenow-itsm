@@ -104,6 +104,132 @@
                   "oauth2_1"
                 ],
                 "type": "object"
+              },
+              {
+                "properties": {
+                  "oauth2_2": {
+                    "properties": {
+                      "client_id": {
+                        "minLength": 1,
+                        "title": "Client ID",
+                        "type": "string"
+                      },
+                      "client_secret": {
+                        "format": "password",
+                        "minLength": 1,
+                        "title": "Client Secret",
+                        "type": "string"
+                      },
+                      "jwt_bearer_config": {
+                        "properties": {
+                          "private_key": {
+                            "type": "object",
+                            "title": "Private Key PEM file",
+                            "properties": {
+                              "contents": {
+                                "type": "string",
+                                "format": "password"
+                              },
+                              "file_name": {
+                                "type": "string"
+                              }
+                            },
+                            "x-cs-ui": {
+                              "component": "workflow-extension-file-upload",
+                              "accept": [".pem"],
+                              "encoding": "base64"
+                            }
+                          },
+                          "private_key_id": {
+                            "title": "Key ID (kid claim)",
+                            "type": "string"
+                          },
+                          "algorithm": {
+                            "default": "RS256",
+                            "enum": [
+                              "RS256",
+                              "RS384",
+                              "RS512"
+                            ],
+                            "type": "string"
+                          },
+                          "subject": {
+                            "title": "Subject (sub claim)",
+                            "type": "string"
+                          },
+                          "audience": {
+                            "title": "Audience (aud claim)",
+                            "type": "string"
+                          },
+                          "issuer": {
+                            "title": "Issuer (iss claim)",
+                            "type": "string"
+                          },
+                          "additional_claims": {
+                            "properties": {
+                              "jti": {
+                                "default": "{jti}",
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "private_key",
+                          "private_key_id",
+                          "subject",
+                          "audience",
+                          "issuer"
+                        ],
+                        "type": "object"
+                      },
+                      "request": {
+                        "properties": {
+                          "x-www-form-urlencoded": {
+                            "properties": {
+                              "grant_type": {
+                                "default": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                                "type": "string"
+                              },
+                              "assertion": {
+                                "default": "{jwt_assertion}",
+                                "type": "string"
+                              },
+                              "client_id": {
+                                "default": "{client_id}",
+                                "type": "string"
+                              },
+                              "client_secret": {
+                                "default": "{client_secret}",
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "client_id",
+                      "jwt_bearer_config"
+                    ],
+                    "type": "object"
+                  },
+                  "type": {
+                    "default": "oauth2_2",
+                    "enum": [
+                      "oauth2_2"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "oauth2_2"
+                ],
+                "type": "object"
               }
             ],
             "type": "object"
@@ -133,6 +259,17 @@
         "flows": {
           "clientCredentials": {
             "tokenUrl": "/oauth_token.do"
+          }
+        },
+        "type": "oauth2"
+      },
+      "oauth2_jwt_bearer": {
+        "bearerFormat": "Bearer",
+        "flows": {
+          "x-cs-custom-flow": {
+            "jwtBearer": {
+              "tokenUrl": "https://{base_url}/oauth_token.do"
+            }
           }
         },
         "type": "oauth2"
@@ -2310,7 +2447,8 @@
   },
   "security": [
     { "http_basic": [] },
-    { "oauth2": [] }
+    { "oauth2": [] },
+    { "oauth2_jwt_bearer": [] }
   ],
   "servers": [
     {
@@ -2365,6 +2503,10 @@
                           {
                             "id": "oauth2_1",
                             "label": "OAuth 2.0 Client Credentials"
+                          },
+                          {
+                            "id": "oauth2_2",
+                            "label": "OAuth 2.0 JWT Bearer"
                           }
                         ],
                         "payloadVersion": "v1",
@@ -2446,6 +2588,172 @@
                       [
                         10,
                         1
+                      ]
+                    ],
+                    "version": "0.3.1"
+                  }
+                },
+                "oauth2_2": {
+                  "mobiledoc": {
+                    "cards": [
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Client ID",
+                          "name": "auth.oauth2_2.client_id",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Client Secret",
+                          "name": "auth.oauth2_2.client_secret",
+                          "payloadVersion": "v1",
+                          "type": "password"
+                        }
+                      ],
+                      [
+                        "workflow-extensions/file-upload/mobiledoc",
+                        {
+                          "accept": ".pem",
+                          "encoding": "base64",
+                          "label": "Private Key PEM file",
+                          "name": "auth.oauth2_2.jwt_bearer_config.private_key",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Key ID (kid claim)",
+                          "name": "auth.oauth2_2.jwt_bearer_config.private_key_id",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Subject (sub claim)",
+                          "name": "auth.oauth2_2.jwt_bearer_config.subject",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Audience (aud claim)",
+                          "name": "auth.oauth2_2.jwt_bearer_config.audience",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Issuer (iss claim)",
+                          "name": "auth.oauth2_2.jwt_bearer_config.issuer",
+                          "payloadVersion": "v1"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "JTI",
+                          "name": "auth.oauth2_2.jwt_bearer_config.additional_claims.jti",
+                          "payloadVersion": "v1",
+                          "type": "hidden",
+                          "value": "{jti}"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Grant Type",
+                          "name": "auth.oauth2_2.request.x-www-form-urlencoded.grant_type",
+                          "payloadVersion": "v1",
+                          "type": "hidden",
+                          "value": "urn:ietf:params:oauth:grant-type:jwt-bearer"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Assertion",
+                          "name": "auth.oauth2_2.request.x-www-form-urlencoded.assertion",
+                          "payloadVersion": "v1",
+                          "type": "hidden",
+                          "value": "{jwt_assertion}"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Client ID",
+                          "name": "auth.oauth2_2.request.x-www-form-urlencoded.client_id",
+                          "payloadVersion": "v1",
+                          "type": "hidden",
+                          "value": "{client_id}"
+                        }
+                      ],
+                      [
+                        "form/input/mobiledoc",
+                        {
+                          "label": "Client Secret",
+                          "name": "auth.oauth2_2.request.x-www-form-urlencoded.client_secret",
+                          "payloadVersion": "v1",
+                          "type": "hidden",
+                          "value": "{client_secret}"
+                        }
+                      ]
+                    ],
+                    "sections": [
+                      [
+                        10,
+                        0
+                      ],
+                      [
+                        10,
+                        1
+                      ],
+                      [
+                        10,
+                        2
+                      ],
+                      [
+                        10,
+                        3
+                      ],
+                      [
+                        10,
+                        4
+                      ],
+                      [
+                        10,
+                        5
+                      ],
+                      [
+                        10,
+                        6
+                      ],
+                      [
+                        10,
+                        7
+                      ],
+                      [
+                        10,
+                        8
+                      ],
+                      [
+                        10,
+                        9
+                      ],
+                      [
+                        10,
+                        10
+                      ],
+                      [
+                        10,
+                        11
                       ]
                     ],
                     "version": "0.3.1"
