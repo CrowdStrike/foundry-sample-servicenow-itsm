@@ -23,7 +23,10 @@ setup('install app', async ({ page }) => {
       await listbox.waitFor({ state: 'visible', timeout: 5000 });
       const options = listbox.getByRole('option');
       const count = await options.count();
-      await listbox.press('ArrowUp');
+      // Press ArrowUp enough times to guarantee focus is at the top
+      for (let j = 0; j < count; j++) {
+        await listbox.press('ArrowUp');
+      }
       for (let i = 0; i < count; i++) {
         if ((await options.nth(i).textContent())?.trim() === 'Basic Authentication') break;
         await listbox.press('ArrowDown');
