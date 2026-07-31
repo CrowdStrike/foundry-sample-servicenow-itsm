@@ -517,6 +517,7 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
                 body={
                     "exists": True,
                     "ticket_id": ext_record.get("external_entity_id"),
+                    "ticket_number": "",
                     "ticket_type": ticket_type
                 }
             )
@@ -585,8 +586,9 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
         result = response_body.get("result", {})
         snow_sys_class_name = result.get("sys_class_name", "")
         snow_sys_id = result.get("sys_id", "")
+        snow_number = result.get("number", "")
 
-        logger.info(f"Received response from ITSM - ticket_id: {snow_sys_id}, ticket_type: {snow_sys_class_name}")
+        logger.info(f"Received response from ITSM - ticket_id: {snow_sys_id}, ticket_number: {snow_number}, ticket_type: {snow_sys_class_name}")
 
         # Store entity mapping
         if snow_sys_id:
@@ -600,6 +602,7 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
             body={
                 "exists": False,
                 "ticket_id": snow_sys_id,
+                "ticket_number": snow_number,
                 "ticket_type": snow_sys_class_name
             }
         )

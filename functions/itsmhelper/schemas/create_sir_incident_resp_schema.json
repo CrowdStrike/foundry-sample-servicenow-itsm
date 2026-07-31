@@ -9,7 +9,13 @@
     },
     "ticket_id": {
       "type": "string",
-      "title": "Ticket ID"
+      "title": "Ticket ID",
+      "description": "ServiceNow sys_id of the ticket"
+    },
+    "ticket_number": {
+      "type": "string",
+      "title": "Ticket Number",
+      "description": "Human-readable ServiceNow ticket number (e.g. SIR0010001)"
     },
     "ticket_type": {
       "type": "string",

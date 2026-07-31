@@ -732,9 +732,10 @@ func (s *HandlerTestSuite) TestHandleCreateIncident() {
 			},
 			wantCode: 200,
 			wantBody: map[string]interface{}{
-				"exists":      true,
-				"ticket_id":   "ticket123",
-				"ticket_type": "incident",
+				"exists":        true,
+				"ticket_id":     "ticket123",
+				"ticket_number": "",
+				"ticket_type":   "incident",
 			},
 		},
 		{
@@ -803,9 +804,10 @@ func (s *HandlerTestSuite) TestHandleCreateIncident() {
 			},
 			wantCode: 201,
 			wantBody: map[string]interface{}{
-				"exists":      false,
-				"ticket_id":   "c2a8a7e5db14301094ed6bfa4b9619d3",
-				"ticket_type": "incident",
+				"exists":        false,
+				"ticket_id":     "c2a8a7e5db14301094ed6bfa4b9619d3",
+				"ticket_number": "INC0010005",
+				"ticket_type":   "incident",
 			},
 		},
 		{
@@ -876,9 +878,10 @@ func (s *HandlerTestSuite) TestHandleCreateIncident() {
 			},
 			wantCode: 201,
 			wantBody: map[string]interface{}{
-				"exists":      false,
-				"ticket_id":   "c2a8a7e5db14301094ed6bfa4b9619d4",
-				"ticket_type": "incident",
+				"exists":        false,
+				"ticket_id":     "c2a8a7e5db14301094ed6bfa4b9619d4",
+				"ticket_number": "INC0010006",
+				"ticket_type":   "incident",
 			},
 		},
 		{
@@ -1319,9 +1322,10 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 			},
 			wantCode: 200,
 			wantBody: map[string]interface{}{
-				"exists":      true,
-				"ticket_id":   "ticket123",
-				"ticket_type": "sn_si_incident",
+				"exists":        true,
+				"ticket_id":     "ticket123",
+				"ticket_number": "",
+				"ticket_type":   "sn_si_incident",
 			},
 		},
 		{
@@ -1398,9 +1402,10 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 			},
 			wantCode: 201,
 			wantBody: map[string]interface{}{
-				"exists":      false,
-				"ticket_id":   "c2a8a7e5db14301094ed6bfa4b9619d4",
-				"ticket_type": "sn_si_incident",
+				"exists":        false,
+				"ticket_id":     "c2a8a7e5db14301094ed6bfa4b9619d4",
+				"ticket_number": "SIR0010005",
+				"ticket_type":   "sn_si_incident",
 			},
 		},
 		{
@@ -1480,9 +1485,10 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 			},
 			wantCode: 201,
 			wantBody: map[string]interface{}{
-				"exists":      false,
-				"ticket_id":   "c2a8a7e5db14301094ed6bfa4b9619d5",
-				"ticket_type": "sn_si_incident",
+				"exists":        false,
+				"ticket_id":     "c2a8a7e5db14301094ed6bfa4b9619d5",
+				"ticket_number": "SIR0010006",
+				"ticket_type":   "sn_si_incident",
 			},
 		},
 		{
