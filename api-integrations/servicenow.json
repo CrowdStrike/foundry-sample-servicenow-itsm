@@ -347,6 +347,15 @@
                 "skip": true
               }
             }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -521,6 +530,15 @@
             "schema": {
               "description": "The unique identifier for the incident",
               "title": "Sys ID",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
               "type": "string"
             }
           }
@@ -750,6 +768,15 @@
                 "skip": true
               }
             }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -924,6 +951,15 @@
             "schema": {
               "description": "The unique identifier for the SIR incident",
               "title": "Sys ID",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
               "type": "string"
             }
           }
@@ -1173,6 +1209,15 @@
                 "skip": true
               }
             }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -1290,6 +1335,15 @@
               "x-cs-ui": {
                 "skip": true
               }
+            }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "schema": {
+              "default": "application/json",
+              "title": "Content-Type",
+              "type": "string"
             }
           }
         ],
