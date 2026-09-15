@@ -16,23 +16,21 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
     await page.getByText('Create workflow from scratch').click();
     // Click Next to proceed to trigger selection
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.waitForLoadState('networkidle');
 
     // Select "On demand" trigger
     const onDemandTrigger = page.getByText('On demand').first();
+    await onDemandTrigger.waitFor({ state: 'visible', timeout: 15000 });
     await onDemandTrigger.click();
 
     const nextButton = page.getByRole('button', { name: 'Next' });
     await nextButton.click();
 
-    await page.waitForLoadState('networkidle');
-    await page.getByText('Add next').waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByText('Add next').waitFor({ state: 'visible', timeout: 15000 });
 
     // Click "Add action" button to open the action selection dialog
     const addNextMenu = page.getByTestId('add-next-menu-container');
     const addActionButton = addNextMenu.getByTestId('context-menu-seq-action-button');
     await addActionButton.click();
-    await page.waitForLoadState('networkidle');
 
     // Wait for search box to be visible
     const searchBox = page.getByRole('searchbox').or(page.getByPlaceholder(/search/i));
@@ -41,7 +39,6 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
     // Wait for initial action list loading to complete
     const loadingMessages = page.getByText('This may take a few moments');
     await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
-    await page.waitForLoadState('networkidle');
 
     // All 5 ITSM Helper actions to verify
     const expectedActions = [
@@ -56,7 +53,6 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
       await expect(searchBox).toBeEnabled({ timeout: 10000 });
       await searchBox.fill(actionName);
       await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
-      await page.waitForLoadState('networkidle');
 
       const tile = page.locator('label[data-test-selector="content-item"]').filter({
         has: page.locator('[data-test-selector="node-tile-heading"]', { hasText: actionName })
@@ -65,11 +61,7 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
 
       let tabsVisible = false;
       for (let clickAttempt = 0; clickAttempt < 3 && !tabsVisible; clickAttempt++) {
-        if (clickAttempt > 0) {
-          await page.waitForLoadState('networkidle');
-        }
         await tile.first().click({ timeout: 10000 });
-        await page.waitForLoadState('networkidle');
 
         const detailTabs = page.getByRole('tab');
         tabsVisible = await detailTabs.first().waitFor({ state: 'visible', timeout: 5000 })
@@ -86,9 +78,7 @@ test.describe('ServiceNow ITSM - E2E Tests', () => {
       );
       if (await backButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await backButton.click();
-        await page.waitForLoadState('networkidle');
         await loadingMessages.first().waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {});
-        await page.waitForLoadState('networkidle');
       }
     }
 
