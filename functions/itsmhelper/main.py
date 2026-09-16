@@ -40,6 +40,8 @@ EXTERNAL_SYSTEM_ID_SERVICENOW_SIR_INCIDENT = "servicenow_sir_incident"
 PLUGIN_DEF_ID_SERVICENOW = "servicenow-foundry"
 PLUGIN_OP_ID_SERVICENOW_CREATE_INCIDENT = "create_incident"
 PLUGIN_OP_ID_SERVICENOW_CREATE_SIR_INCIDENT = "create_sn_si_incident"
+PLUGIN_OP_ID_SERVICENOW_UPDATE_INCIDENT = "update_incident"
+PLUGIN_OP_ID_SERVICENOW_UPDATE_SIR_INCIDENT = "update_sn_si_incident"
 
 # Collection names
 COLLECTION_NAME_TRACKED_ENTITIES = "tracked_entities"
@@ -334,6 +336,43 @@ def build_request_payload(body: Dict[str, Any]) -> Dict[str, Any]:
     optional_fields = [
         "assignment_group", "category", "description", "impact",
         "severity", "state", "urgency", "work_notes"
+    ]
+
+    for field in optional_fields:
+        if body.get(field):
+            request_payload[field] = body[field]
+
+    # Handle custom fields
+    custom_fields_str = body.get("custom_fields")
+    if custom_fields_str:
+        try:
+            custom_fields = json.loads(custom_fields_str) if isinstance(custom_fields_str, str) else custom_fields_str
+            request_payload.update(custom_fields)
+        except json.JSONDecodeError:
+            # Log but don't fail - custom fields are optional
+            pass
+
+    return request_payload
+
+
+def build_update_request_payload(body: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build ServiceNow API request payload from update incident request.
+
+    Unlike build_request_payload, all fields are optional - only non-empty
+    fields are included in the payload.
+
+    Args:
+        body: Request body
+
+    Returns:
+        Request payload dictionary
+    """
+    request_payload: Dict[str, Any] = {}
+
+    optional_fields = [
+        "short_description", "assignment_group", "category", "description",
+        "impact", "severity", "state", "urgency", "work_notes"
     ]
 
     for field in optional_fields:
@@ -652,6 +691,173 @@ def create_sir_incident_handler(req: Request, _config: Optional[Dict[str, object
         PLUGIN_OP_ID_SERVICENOW_CREATE_SIR_INCIDENT,
         "sn_si_incident",
         EXTERNAL_SYSTEM_ID_SERVICENOW_SIR_INCIDENT
+    )
+
+
+def update_incident_impl(  # pylint: disable=too-many-locals,too-many-return-statements
+    req: Request,
+    logger: Logger,
+    operation_id: str,
+    ticket_type: str
+) -> Response:
+    """
+    Common implementation for updating incidents.
+
+    Args:
+        req: Request object
+        logger: Logger instance
+        operation_id: ServiceNow operation ID
+        ticket_type: Ticket type name
+
+    Returns:
+        Response object
+    """
+    try:
+        logger.info(
+            f"Updating {ticket_type} - trace_id: {req.trace_id}, workflow_ctx: {req.context}"
+        )
+
+        body = req.body
+        config_id = body.get("config_id")
+        sys_id = body.get("sys_id")
+
+        if not config_id or not sys_id:
+            return Response(
+                code=HTTPStatus.BAD_REQUEST,
+                errors=[APIError(
+                    code=HTTPStatus.BAD_REQUEST,
+                    message="Missing required fields: config_id, sys_id"
+                )]
+            )
+
+        api_integrations, _ = create_falcon_clients(logger)
+
+        # Build the update payload, flattening any custom fields into the root
+        request_payload = build_update_request_payload(body)
+
+        # Execute API integration command. sys_id is passed as a path parameter.
+        command_body = {
+            "resources": [{
+                "definition_id": PLUGIN_DEF_ID_SERVICENOW,
+                "operation_id": operation_id,
+                "config_id": config_id,
+                "request": {
+                    "json": request_payload,
+                    "params": {
+                        "path": {"sys_id": sys_id}
+                    }
+                }
+            }]
+        }
+
+        exec_response = api_integrations.execute_command(body=command_body)
+
+        status_code = exec_response.get("status_code")
+        logger.info(f"Plugin execution completed - status: {status_code}")
+
+        if status_code not in [200, 201]:
+            errors = exec_response.get("body", {}).get("errors", [])
+            error_msg = errors[0].get("message", "Unknown error") if errors else f"Status {status_code}"
+            logger.error(f"Failed to execute command: {error_msg}")
+            return Response(
+                code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                errors=[APIError(
+                    code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    message=f"Failed to execute command: {error_msg}"
+                )]
+            )
+
+        # Parse response
+        resources = exec_response.get("body", {}).get("resources", [])
+        if not resources:
+            return Response(
+                code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                errors=[APIError(
+                    code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    message="Empty response from ServiceNow"
+                )]
+            )
+
+        resource = resources[0]
+        response_body = resource.get("response_body", {})
+
+        # Check for errors
+        if "error" in response_body:
+            error_text = response_body["error"]
+            if isinstance(error_text, dict):
+                error_text = json.dumps(error_text)
+            logger.error(f"ServiceNow error: {error_text}")
+            return Response(
+                code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                errors=[APIError(
+                    code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    message=f"ServiceNow Error: {error_text}"
+                )]
+            )
+
+        # Extract ticket information. The update response has no sys_class_name,
+        # so ticket_type is derived from the handler context.
+        result = response_body.get("result", {})
+        snow_sys_id = result.get("sys_id", "")
+        snow_number = result.get("number", "")
+
+        logger.info(f"Updated ticket in ITSM - ticket_id: {snow_sys_id}, ticket_type: {ticket_type}")
+
+        return Response(
+            code=HTTPStatus.OK,
+            body={
+                "ticket_id": snow_sys_id,
+                "ticket_type": ticket_type,
+                "number": snow_number
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating {ticket_type}: {str(e)}", exc_info=True)
+        return Response(
+            code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            errors=[APIError(
+                code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                message=f"Internal error: {str(e)}"
+            )]
+        )
+
+
+@FUNC.handler(path="/update_incident", method="POST")
+def update_incident_handler(req: Request, _config: Optional[Dict[str, object]], logger: Logger) -> Response:
+    """
+    Update a ServiceNow incident.
+
+    Request body:
+        - config_id: ServiceNow config ID
+        - sys_id: ServiceNow incident sys_id to update (required)
+        - short_description, assignment_group, category, description, impact,
+          severity, state, urgency, work_notes: Optional fields
+        - custom_fields: JSON string of custom fields
+    """
+    return update_incident_impl(
+        req, logger,
+        PLUGIN_OP_ID_SERVICENOW_UPDATE_INCIDENT,
+        "incident"
+    )
+
+
+@FUNC.handler(path="/update_sir_incident", method="POST")
+def update_sir_incident_handler(req: Request, _config: Optional[Dict[str, object]], logger: Logger) -> Response:
+    """
+    Update a ServiceNow SIR incident.
+
+    Request body:
+        - config_id: ServiceNow config ID
+        - sys_id: ServiceNow SIR incident sys_id to update (required)
+        - short_description, assignment_group, category, description, impact,
+          severity, state, urgency, work_notes: Optional fields
+        - custom_fields: JSON string of custom fields
+    """
+    return update_incident_impl(
+        req, logger,
+        PLUGIN_OP_ID_SERVICENOW_UPDATE_SIR_INCIDENT,
+        "sn_si_incident"
     )
 
 

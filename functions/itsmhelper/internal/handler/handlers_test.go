@@ -1741,6 +1741,439 @@ func (s *HandlerTestSuite) TestHandleCreateSIRIncident() {
 	}
 }
 
+// TestHandleUpdateIncident tests the Handler.HandleUpdateIncident method
+func (s *HandlerTestSuite) TestHandleUpdateIncident() {
+	tests := []struct {
+		name                     string
+		request                  fdk.RequestOf[UpdateIncidentRequest]
+		workflowCtx              fdk.WorkflowCtx
+		setupMockAPIIntegrations func(mockAPIIntegrations *MockAPIIntegrationsService)
+		setupMockClient          func() (*client.CrowdStrikeAPISpecification, string, error)
+		wantCode                 int
+		wantBody                 map[string]interface{}
+		wantErrors               []fdk.APIError
+	}{
+		{
+			name: "Successful update",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID:  "config123",
+					SysID:     "ticket123",
+					State:     "2",
+					WorkNotes: "Investigating",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					// Verify correct operation ID
+					if params.Body.Resources[0].OperationID == nil || *params.Body.Resources[0].OperationID != pluginOpIDServiceNowUpdateIncident {
+						return nil, fmt.Errorf("expected operation ID %s", pluginOpIDServiceNowUpdateIncident)
+					}
+
+					// Verify sys_id is passed as a path parameter, not in the body
+					pathParams, ok := params.Body.Resources[0].Request.Params.Path.(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("expected path params to be a map[string]interface{}")
+					}
+					if pathParams["sys_id"] != "ticket123" {
+						return nil, fmt.Errorf("expected sys_id path param to be ticket123, got %v", pathParams["sys_id"])
+					}
+
+					// Verify sys_id is NOT in the JSON body
+					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
+					}
+					if _, present := requestJSON["sys_id"]; present {
+						return nil, fmt.Errorf("sys_id should not be present in the JSON body")
+					}
+
+					result := map[string]interface{}{
+						"sys_id": "ticket123",
+						"number": "INC0010005",
+					}
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: map[string]interface{}{"result": result}},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 200,
+			wantBody: map[string]interface{}{
+				"ticket_id":   "ticket123",
+				"ticket_type": "incident",
+				"number":      "INC0010005",
+			},
+		},
+		{
+			name: "Successful update with custom fields",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID:     "config123",
+					SysID:        "ticket456",
+					CustomFields: `{"u_custom_field1": "value1", "u_custom_field2": 42, "u_custom_field3": true}`,
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
+					}
+					if requestJSON["u_custom_field1"] != "value1" ||
+						requestJSON["u_custom_field2"] != float64(42) ||
+						requestJSON["u_custom_field3"] != true {
+						return nil, fmt.Errorf("custom fields not properly included in request payload")
+					}
+
+					result := map[string]interface{}{
+						"sys_id": "ticket456",
+						"number": "INC0010006",
+					}
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: map[string]interface{}{"result": result}},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 200,
+			wantBody: map[string]interface{}{
+				"ticket_id":   "ticket456",
+				"ticket_type": "incident",
+				"number":      "INC0010006",
+			},
+		},
+		{
+			name: "Falcon client creation error",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+					SysID:    "ticket123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx:              fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return nil, "", fmt.Errorf("client creation error")
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "error creating Falcon client: client creation error",
+				},
+			},
+		},
+		{
+			name: "Error executing ServiceNow command",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+					SysID:    "ticket123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return nil, fmt.Errorf("401 Unauthorized")
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "failed to execute command: 401 Unauthorized",
+				},
+			},
+		},
+		{
+			name: "ServiceNow error field in response",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+					SysID:    "ticket123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: map[string]interface{}{
+									"error": "Record not found",
+								}},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "failed to execute command: ServiceNow Error: Record not found",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+
+			tc.setupMockAPIIntegrations(s.mockAPIIntegrations)
+
+			mockClientBuilder := func(token string, logger *slog.Logger) (*client.CrowdStrikeAPISpecification, string, error) {
+				client, cloud, err := tc.setupMockClient()
+				if client != nil && err == nil {
+					client.CustomStorage = s.mockStorage
+					client.APIIntegrations = s.mockAPIIntegrations
+				}
+				return client, cloud, err
+			}
+
+			handler := &Handler{
+				logger:           s.logger,
+				falconClientFunc: mockClientBuilder,
+			}
+
+			response := handler.HandleUpdateIncident(context.Background(), tc.request, tc.workflowCtx)
+			s.Equal(tc.wantCode, response.Code, "Response code should match expected value")
+
+			if len(tc.wantErrors) > 0 {
+				s.Nil(response.Body, "Response body should be nil for error responses")
+				s.NotEmpty(response.Errors, "Response errors should not be empty for error responses")
+				s.Len(response.Errors, len(tc.wantErrors), "Response should have the expected number of errors")
+				for i, wantErr := range tc.wantErrors {
+					s.Equal(wantErr.Code, response.Errors[i].Code, "Error code should match expected value")
+					s.Equal(wantErr.Message, response.Errors[i].Message, "Error message should match expected value")
+				}
+				return
+			}
+
+			jsonBytes, err := json.Marshal(response.Body)
+			s.NoError(err, "Failed to marshal JSON body")
+
+			var actual map[string]interface{}
+			err = json.Unmarshal(jsonBytes, &actual)
+			s.NoError(err, "Failed to unmarshal JSON body")
+
+			for k, v := range tc.wantBody {
+				actualVal, exists := actual[k]
+				s.True(exists, "Expected key %q not found in response", k)
+				s.Equal(v, actualVal, "For key %q, expected value should match actual value", k)
+			}
+		})
+	}
+}
+
+// TestHandleUpdateSIRIncident tests the Handler.HandleUpdateSIRIncident method
+func (s *HandlerTestSuite) TestHandleUpdateSIRIncident() {
+	tests := []struct {
+		name                     string
+		request                  fdk.RequestOf[UpdateIncidentRequest]
+		workflowCtx              fdk.WorkflowCtx
+		setupMockAPIIntegrations func(mockAPIIntegrations *MockAPIIntegrationsService)
+		setupMockClient          func() (*client.CrowdStrikeAPISpecification, string, error)
+		wantCode                 int
+		wantBody                 map[string]interface{}
+		wantErrors               []fdk.APIError
+	}{
+		{
+			name: "Successful SIR update with custom fields",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID:     "config123",
+					SysID:        "sir123",
+					State:        "2",
+					CustomFields: `{"u_security_category": "malware", "u_affected_systems": 3, "u_has_pii_data": true}`,
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					// Verify correct operation ID
+					if params.Body.Resources[0].OperationID == nil || *params.Body.Resources[0].OperationID != pluginOpIDServiceNowUpdateSIRIncident {
+						return nil, fmt.Errorf("expected operation ID %s", pluginOpIDServiceNowUpdateSIRIncident)
+					}
+
+					// Verify sys_id is passed as a path parameter
+					pathParams, ok := params.Body.Resources[0].Request.Params.Path.(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("expected path params to be a map[string]interface{}")
+					}
+					if pathParams["sys_id"] != "sir123" {
+						return nil, fmt.Errorf("expected sys_id path param to be sir123, got %v", pathParams["sys_id"])
+					}
+
+					requestJSON, ok := params.Body.Resources[0].Request.JSON.(map[string]interface{})
+					if !ok {
+						return nil, fmt.Errorf("expected request JSON to be a map[string]interface{}")
+					}
+					if requestJSON["u_security_category"] != "malware" ||
+						requestJSON["u_affected_systems"] != float64(3) ||
+						requestJSON["u_has_pii_data"] != true {
+						return nil, fmt.Errorf("custom fields not properly included in request payload")
+					}
+
+					result := map[string]interface{}{
+						"sys_id": "sir123",
+						"number": "SIR0010005",
+					}
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: map[string]interface{}{"result": result}},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 200,
+			wantBody: map[string]interface{}{
+				"ticket_id":   "sir123",
+				"ticket_type": "sn_si_incident",
+				"number":      "SIR0010005",
+			},
+		},
+		{
+			name: "Falcon client creation error",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+					SysID:    "sir123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx:              fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return nil, "", fmt.Errorf("client creation error")
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "error creating Falcon client: client creation error",
+				},
+			},
+		},
+		{
+			name: "ServiceNow error field in response",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+					SysID:    "sir123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: map[string]interface{}{
+									"error": "Record not found",
+								}},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "failed to execute command: ServiceNow Error: Record not found",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+
+			tc.setupMockAPIIntegrations(s.mockAPIIntegrations)
+
+			mockClientBuilder := func(token string, logger *slog.Logger) (*client.CrowdStrikeAPISpecification, string, error) {
+				client, cloud, err := tc.setupMockClient()
+				if client != nil && err == nil {
+					client.CustomStorage = s.mockStorage
+					client.APIIntegrations = s.mockAPIIntegrations
+				}
+				return client, cloud, err
+			}
+
+			handler := &Handler{
+				logger:           s.logger,
+				falconClientFunc: mockClientBuilder,
+			}
+
+			response := handler.HandleUpdateSIRIncident(context.Background(), tc.request, tc.workflowCtx)
+			s.Equal(tc.wantCode, response.Code, "Response code should match expected value")
+
+			if len(tc.wantErrors) > 0 {
+				s.Nil(response.Body, "Response body should be nil for error responses")
+				s.NotEmpty(response.Errors, "Response errors should not be empty for error responses")
+				s.Len(response.Errors, len(tc.wantErrors), "Response should have the expected number of errors")
+				for i, wantErr := range tc.wantErrors {
+					s.Equal(wantErr.Code, response.Errors[i].Code, "Error code should match expected value")
+					s.Equal(wantErr.Message, response.Errors[i].Message, "Error message should match expected value")
+				}
+				return
+			}
+
+			jsonBytes, err := json.Marshal(response.Body)
+			s.NoError(err, "Failed to marshal JSON body")
+
+			var actual map[string]interface{}
+			err = json.Unmarshal(jsonBytes, &actual)
+			s.NoError(err, "Failed to unmarshal JSON body")
+
+			for k, v := range tc.wantBody {
+				actualVal, exists := actual[k]
+				s.True(exists, "Expected key %q not found in response", k)
+				s.Equal(v, actualVal, "For key %q, expected value should match actual value", k)
+			}
+		})
+	}
+}
+
 // TestExecuteCommandPayloadJSON verifies the JSON wire format of the execute command request.
 func (s *HandlerTestSuite) TestExecuteCommandPayloadJSON() {
 	tests := []struct {
