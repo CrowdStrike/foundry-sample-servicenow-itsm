@@ -4,9 +4,13 @@ on:
   push:
     paths:
       - '**.py'
+      - '.github/workflows/pylint.yml'
+      - 'functions/**/requirements.txt'
   pull_request:
     paths:
       - '**.py'
+      - '.github/workflows/pylint.yml'
+      - 'functions/**/requirements.txt'
 
 permissions:
   contents: read
