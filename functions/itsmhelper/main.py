@@ -705,3 +705,7 @@ def throttle_handler(req: Request, _config: Optional[Dict[str, object]], logger:
                 message=f"Internal error: {str(e)}"
             )]
         )
+
+
+if __name__ == "__main__":
+    FUNC.run()
