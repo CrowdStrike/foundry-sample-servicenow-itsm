@@ -466,6 +466,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.OK)
         self.assertTrue(response.body["exists"])
         self.assertEqual(response.body["ticket_id"], "existing-ticket-123")
+        self.assertEqual(response.body["ticket_number"], "")
         # Should not call API integration if ticket exists
         mock_api_integrations.execute_command.assert_not_called()
 
@@ -489,6 +490,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
                     "response_body": {
                         "result": {
                             "sys_id": "new-ticket-123",
+                            "number": "INC0010001",
                             "sys_class_name": "incident"
                         }
                     }
@@ -511,6 +513,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.CREATED)
         self.assertFalse(response.body["exists"])
         self.assertEqual(response.body["ticket_id"], "new-ticket-123")
+        self.assertEqual(response.body["ticket_number"], "INC0010001")
         self.assertEqual(response.body["ticket_type"], "incident")
 
         # Verify API integration was called
@@ -541,6 +544,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
                     "response_body": {
                         "result": {
                             "sys_id": "new-ticket-456",
+                            "number": "INC0010002",
                             "sys_class_name": "incident"
                         }
                     }
@@ -567,6 +571,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.CREATED)
         self.assertFalse(response.body["exists"])
         self.assertEqual(response.body["ticket_id"], "new-ticket-456")
+        self.assertEqual(response.body["ticket_number"], "INC0010002")
         mock_api_integrations.execute_command.assert_called_once()
 
     @patch('main.create_falcon_clients')

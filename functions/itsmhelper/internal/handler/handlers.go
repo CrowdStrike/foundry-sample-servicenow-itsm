@@ -13,7 +13,12 @@ import (
 	"github.com/crowdstrike/gofalcon/falcon/client"
 	"github.com/crowdstrike/gofalcon/falcon/client/api_integrations"
 	"github.com/crowdstrike/gofalcon/falcon/models"
+	"github.com/go-openapi/runtime"
 )
+
+func withJSONContentType(op *runtime.ClientOperation) {
+	op.ConsumesMediaTypes = []string{"application/json"}
+}
 
 const (
 	ExternalSystemIDServiceNowIncident    = "servicenow_incident"
@@ -58,9 +63,10 @@ type CreateIncidentRequest struct {
 
 // CreateIncidentResponse represents the response body for creating an incident
 type CreateIncidentResponse struct {
-	Exists     bool   `json:"exists"`
-	TicketID   string `json:"ticket_id"`
-	TicketType string `json:"ticket_type"`
+	Exists       bool   `json:"exists"`
+	TicketID     string `json:"ticket_id"`
+	TicketNumber string `json:"ticket_number"`
+	TicketType   string `json:"ticket_type"`
 }
 
 // ThrottleFunctionRequest represents the schema for deduplication requests
@@ -257,7 +263,7 @@ func (h *Handler) createIncident(
 		Context: ctx,
 	}
 
-	execResp, err := falconClient.APIIntegrations.ExecuteCommand(execCmdParams)
+	execResp, err := falconClient.APIIntegrations.ExecuteCommand(execCmdParams, withJSONContentType)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to execute command: %v", err)
 		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: errMsg})
@@ -282,6 +288,7 @@ func (h *Handler) createIncident(
 
 	snowSysClassName := ""
 	snowSysID := ""
+	snowNumber := ""
 	errorText := ""
 
 	if result, ok := resourceRespBody.(map[string]interface{})["result"]; ok {
@@ -294,6 +301,11 @@ func (h *Handler) createIncident(
 			// Try to get sys_id
 			if sysID, ok := resultMap["sys_id"].(string); ok {
 				snowSysID = sysID
+			}
+
+			// Try to get number (human-readable ticket number like INC0010001)
+			if number, ok := resultMap["number"].(string); ok {
+				snowNumber = number
 			}
 		}
 	}
@@ -316,7 +328,7 @@ func (h *Handler) createIncident(
 		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: errMsg})
 	}
 
-	h.logger.Info("received response from ITSM", "ticket_id", snowSysID, "ticket_type", snowSysClassName)
+	h.logger.Info("received response from ITSM", "ticket_id", snowSysID, "ticket_number", snowNumber, "ticket_type", snowSysClassName)
 
 	// If we successfully created a ticket, store the mapping
 	if snowSysID != "" {
@@ -336,9 +348,10 @@ func (h *Handler) createIncident(
 	}
 
 	response := CreateIncidentResponse{
-		TicketID:   snowSysID,
-		TicketType: snowSysClassName,
-		Exists:     false,
+		TicketID:     snowSysID,
+		TicketNumber: snowNumber,
+		TicketType:   snowSysClassName,
+		Exists:       false,
 	}
 
 	return fdk.Response{
