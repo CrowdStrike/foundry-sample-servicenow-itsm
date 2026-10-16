@@ -651,6 +651,219 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.BAD_REQUEST)
 
 
+class TestBuildUpdateRequestPayload(unittest.TestCase):
+    """Test build_update_request_payload function"""
+
+    def test_empty_payload(self):
+        body = {"config_id": "config123", "sys_id": "ticket123"}
+        result = main.build_update_request_payload(body)
+
+        # config_id and sys_id are not part of the ServiceNow payload
+        self.assertEqual(result, {})
+
+    def test_partial_payload(self):
+        body = {"state": "2", "work_notes": "Investigating"}
+        result = main.build_update_request_payload(body)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result["state"], "2")
+        self.assertEqual(result["work_notes"], "Investigating")
+
+    def test_full_payload(self):
+        body = {
+            "short_description": "Updated incident",
+            "assignment_group": "IT Support",
+            "category": "Software",
+            "description": "Full description",
+            "impact": "2",
+            "severity": "3",
+            "state": "1",
+            "urgency": "2",
+            "work_notes": "Initial notes"
+        }
+        result = main.build_update_request_payload(body)
+
+        self.assertEqual(len(result), 9)
+        self.assertEqual(result["short_description"], "Updated incident")
+        self.assertEqual(result["impact"], "2")
+
+    def test_payload_with_custom_fields(self):
+        body = {
+            "state": "2",
+            "custom_fields": '{"custom_field1": "value1", "custom_field2": "value2"}'
+        }
+        result = main.build_update_request_payload(body)
+
+        self.assertEqual(result["state"], "2")
+        self.assertEqual(result["custom_field1"], "value1")
+        self.assertEqual(result["custom_field2"], "value2")
+
+
+class TestUpdateIncidentHandlers(unittest.TestCase):
+    """Test update_incident_handler and update_sir_incident_handler"""
+
+    @patch('main.create_falcon_clients')
+    def test_update_incident_success(self, mock_create_clients):
+        mock_logger = Mock()
+        mock_api_integrations = Mock()
+        mock_client = Mock()
+        mock_create_clients.return_value = (mock_api_integrations, mock_client)
+
+        mock_api_integrations.execute_command.return_value = {
+            "status_code": 200,
+            "body": {
+                "resources": [{
+                    "response_body": {
+                        "result": {
+                            "sys_id": "ticket123",
+                            "number": "INC0010005"
+                        }
+                    }
+                }]
+            }
+        }
+
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.context = {}
+        mock_request.body = {
+            "config_id": "config123",
+            "sys_id": "ticket123",
+            "state": "2",
+            "work_notes": "Investigating"
+        }
+
+        response = main.update_incident_handler(mock_request, None, mock_logger)
+
+        self.assertEqual(response.code, HTTPStatus.OK)
+        self.assertEqual(response.body["ticket_id"], "ticket123")
+        self.assertEqual(response.body["ticket_type"], "incident")
+        self.assertEqual(response.body["number"], "INC0010005")
+
+        # Verify sys_id is passed as a path parameter, not in the JSON body
+        call_args = mock_api_integrations.execute_command.call_args[1]
+        request = call_args["body"]["resources"][0]["request"]
+        self.assertEqual(request["params"]["path"]["sys_id"], "ticket123")
+        self.assertNotIn("sys_id", request["json"])
+        self.assertEqual(call_args["body"]["resources"][0]["operation_id"],
+                         main.PLUGIN_OP_ID_SERVICENOW_UPDATE_INCIDENT)
+
+    @patch('main.create_falcon_clients')
+    def test_update_sir_incident_success_with_custom_fields(self, mock_create_clients):
+        mock_logger = Mock()
+        mock_api_integrations = Mock()
+        mock_client = Mock()
+        mock_create_clients.return_value = (mock_api_integrations, mock_client)
+
+        mock_api_integrations.execute_command.return_value = {
+            "status_code": 200,
+            "body": {
+                "resources": [{
+                    "response_body": {
+                        "result": {
+                            "sys_id": "sir123",
+                            "number": "SIR0010005"
+                        }
+                    }
+                }]
+            }
+        }
+
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.context = {}
+        mock_request.body = {
+            "config_id": "config123",
+            "sys_id": "sir123",
+            "custom_fields": '{"u_security_category": "malware"}'
+        }
+
+        response = main.update_sir_incident_handler(mock_request, None, mock_logger)
+
+        self.assertEqual(response.code, HTTPStatus.OK)
+        self.assertEqual(response.body["ticket_id"], "sir123")
+        self.assertEqual(response.body["ticket_type"], "sn_si_incident")
+
+        # Verify custom fields are flattened and correct operation ID is used
+        call_args = mock_api_integrations.execute_command.call_args[1]
+        request = call_args["body"]["resources"][0]["request"]
+        self.assertEqual(request["json"]["u_security_category"], "malware")
+        self.assertEqual(call_args["body"]["resources"][0]["operation_id"],
+                         main.PLUGIN_OP_ID_SERVICENOW_UPDATE_SIR_INCIDENT)
+
+    @patch('main.create_falcon_clients')
+    def test_update_execute_command_failure(self, mock_create_clients):
+        mock_logger = Mock()
+        mock_api_integrations = Mock()
+        mock_client = Mock()
+        mock_create_clients.return_value = (mock_api_integrations, mock_client)
+
+        mock_api_integrations.execute_command.return_value = {
+            "status_code": 403,
+            "body": {
+                "errors": [{"message": "received invalid status code from plugin: 403"}]
+            }
+        }
+
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.context = {}
+        mock_request.body = {
+            "config_id": "config123",
+            "sys_id": "ticket123"
+        }
+
+        response = main.update_incident_handler(mock_request, None, mock_logger)
+
+        self.assertEqual(response.code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.assertIn("403", response.errors[0].message)
+
+    @patch('main.create_falcon_clients')
+    def test_update_servicenow_error_response(self, mock_create_clients):
+        mock_logger = Mock()
+        mock_api_integrations = Mock()
+        mock_client = Mock()
+        mock_create_clients.return_value = (mock_api_integrations, mock_client)
+
+        mock_api_integrations.execute_command.return_value = {
+            "status_code": 200,
+            "body": {
+                "resources": [{
+                    "response_body": {
+                        "error": "Record not found"
+                    }
+                }]
+            }
+        }
+
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.context = {}
+        mock_request.body = {
+            "config_id": "config123",
+            "sys_id": "ticket123"
+        }
+
+        response = main.update_incident_handler(mock_request, None, mock_logger)
+
+        self.assertEqual(response.code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.assertIn("ServiceNow Error", response.errors[0].message)
+
+    def test_update_missing_required_fields(self):
+        mock_logger = Mock()
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.context = {}
+        mock_request.body = {
+            "config_id": "config123"
+            # Missing sys_id
+        }
+
+        response = main.update_incident_handler(mock_request, None, mock_logger)
+
+        self.assertEqual(response.code, HTTPStatus.BAD_REQUEST)
+
+
 class TestThrottleHandler(unittest.TestCase):
     """Test throttle_handler"""
 

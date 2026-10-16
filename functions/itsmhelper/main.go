@@ -44,6 +44,16 @@ func newHandler(ctx context.Context, logger *slog.Logger, cfg config) fdk.Handle
 			return h.HandleCreateSIRIncident(ctx, r, wrkCtx)
 		})))
 
+	m.Post("/update_incident", fdk.HandleWorkflowOf(service.WithPanicRecoveryWorkflow(logger,
+		func(ctx context.Context, r fdk.RequestOf[handler.UpdateIncidentRequest], wrkCtx fdk.WorkflowCtx) fdk.Response {
+			return h.HandleUpdateIncident(ctx, r, wrkCtx)
+		})))
+
+	m.Post("/update_sir_incident", fdk.HandleWorkflowOf(service.WithPanicRecoveryWorkflow(logger,
+		func(ctx context.Context, r fdk.RequestOf[handler.UpdateIncidentRequest], wrkCtx fdk.WorkflowCtx) fdk.Response {
+			return h.HandleUpdateSIRIncident(ctx, r, wrkCtx)
+		})))
+
 	m.Post("/throttle", fdk.HandleFnOf(func(ctx context.Context, r fdk.RequestOf[handler.ThrottleFunctionRequest]) fdk.Response {
 		return h.HandleThrottle(ctx, r)
 	}))

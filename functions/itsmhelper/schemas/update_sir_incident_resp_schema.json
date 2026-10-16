@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "title": "Ticket ID"
+    },
+    "ticket_type": {
+      "type": "string",
+      "title": "Ticket Type"
+    },
+    "number": {
+      "type": "string",
+      "title": "Number"
+    }
+  },
+  "additionalProperties": false
+}

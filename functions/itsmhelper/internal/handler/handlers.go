@@ -26,6 +26,9 @@ var (
 
 	pluginOpIDServiceNowCreateIncident    = "create_incident"
 	pluginOpIDServiceNowCreateSIRIncident = "create_sn_si_incident"
+
+	pluginOpIDServiceNowUpdateIncident    = "update_incident"
+	pluginOpIDServiceNowUpdateSIRIncident = "update_sn_si_incident"
 )
 
 type CheckIfExtExistsReq struct {
@@ -61,6 +64,30 @@ type CreateIncidentResponse struct {
 	Exists     bool   `json:"exists"`
 	TicketID   string `json:"ticket_id"`
 	TicketType string `json:"ticket_type"`
+}
+
+// UpdateIncidentRequest represents the request body for updating an incident
+type UpdateIncidentRequest struct {
+	ConfigID string `json:"config_id"`
+	SysID    string `json:"sys_id"`
+
+	AssignmentGroup  string `json:"assignment_group"`
+	Category         string `json:"category"`
+	Description      string `json:"description"`
+	Impact           string `json:"impact"`
+	Severity         string `json:"severity"`
+	ShortDescription string `json:"short_description"`
+	State            string `json:"state"`
+	Urgency          string `json:"urgency"`
+	WorkNotes        string `json:"work_notes"`
+	CustomFields     string `json:"custom_fields"`
+}
+
+// UpdateIncidentResponse represents the response body for updating an incident
+type UpdateIncidentResponse struct {
+	TicketID   string `json:"ticket_id"`
+	TicketType string `json:"ticket_type"`
+	Number     string `json:"number"`
 }
 
 // ThrottleFunctionRequest represents the schema for deduplication requests
@@ -162,6 +189,51 @@ func buildRequestPayload(body CreateIncidentRequest) map[string]interface{} {
 	}
 
 	// Add optional fields if they are provided
+	if body.AssignmentGroup != "" {
+		requestPayload["assignment_group"] = body.AssignmentGroup
+	}
+	if body.Category != "" {
+		requestPayload["category"] = body.Category
+	}
+	if body.Description != "" {
+		requestPayload["description"] = body.Description
+	}
+	if body.Impact != "" {
+		requestPayload["impact"] = body.Impact
+	}
+	if body.Severity != "" {
+		requestPayload["severity"] = body.Severity
+	}
+	if body.State != "" {
+		requestPayload["state"] = body.State
+	}
+	if body.Urgency != "" {
+		requestPayload["urgency"] = body.Urgency
+	}
+	if body.WorkNotes != "" {
+		requestPayload["work_notes"] = body.WorkNotes
+	}
+
+	if body.CustomFields != "" {
+		var customFields map[string]interface{}
+		if err := json.Unmarshal([]byte(body.CustomFields), &customFields); err == nil {
+			for key, value := range customFields {
+				requestPayload[key] = value
+			}
+		}
+	}
+
+	return requestPayload
+}
+
+// buildUpdateRequestPayload creates the request payload from the update incident request.
+// Unlike buildRequestPayload, all fields are optional - only non-empty fields are included.
+func buildUpdateRequestPayload(body UpdateIncidentRequest) map[string]interface{} {
+	requestPayload := map[string]interface{}{}
+
+	if body.ShortDescription != "" {
+		requestPayload["short_description"] = body.ShortDescription
+	}
 	if body.AssignmentGroup != "" {
 		requestPayload["assignment_group"] = body.AssignmentGroup
 	}
@@ -355,6 +427,123 @@ func (h *Handler) HandleCreateIncident(ctx context.Context, r fdk.RequestOf[Crea
 // HandleCreateSIRIncident handles the /create_sir_incident endpoint
 func (h *Handler) HandleCreateSIRIncident(ctx context.Context, r fdk.RequestOf[CreateIncidentRequest], wrkCtx fdk.WorkflowCtx) fdk.Response {
 	return h.createIncident(ctx, r, wrkCtx, pluginOpIDServiceNowCreateSIRIncident, "sn_si_incident", ExternalSystemIDServiceNowSIRIncident)
+}
+
+// updateIncident handles the common logic for updating both regular and SIR incidents
+func (h *Handler) updateIncident(
+	ctx context.Context,
+	r fdk.RequestOf[UpdateIncidentRequest],
+	wrkCtx fdk.WorkflowCtx,
+	operationID string,
+	ticketType string,
+) fdk.Response {
+	h.logger.Info("Updating incident", "type", ticketType, "trace_id", r.TraceID, "wrk_ctx", wrkCtx)
+	accessToken := r.AccessToken
+
+	falconClient, cloud, err := h.falconClientFunc(accessToken, h.logger)
+	if err != nil {
+		errMsg := fmt.Sprintf("error creating Falcon client: %v", err)
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: errMsg})
+	}
+	_ = cloud
+
+	// Build the update payload, flattening any custom fields into the root
+	requestPayload := buildUpdateRequestPayload(r.Body)
+
+	configID := r.Body.ConfigID
+	execCmdParams := &api_integrations.ExecuteCommandParams{
+		Body: &models.DomainExecuteCommandRequestV1{Resources: []*models.DomainExecuteCommandV1{
+			{
+				DefinitionID: &pluginDefIDServiceNow,
+				OperationID:  &operationID,
+				ConfigID:     &configID,
+				Request: &models.DomainRequest{
+					JSON: requestPayload,
+					Params: &models.DomainParams{
+						Path: map[string]interface{}{"sys_id": r.Body.SysID},
+					},
+				},
+			},
+		}},
+		Context: ctx,
+	}
+
+	execResp, err := falconClient.APIIntegrations.ExecuteCommand(execCmdParams)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to execute command: %v", err)
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: errMsg})
+	}
+
+	if execResp == nil {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: "failed to execute command - nil response"})
+	}
+
+	h.logger.Info("plugin execution completed", "status_code", execResp.Code())
+	if execResp.Payload == nil {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: "failed to execute command - empty response"})
+	}
+
+	resources := execResp.Payload.Resources
+	if len(resources) == 0 {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: "failed to execute command - empty resources in response payload"})
+	}
+
+	resource := resources[0]
+	resourceRespBody := resource.ResponseBody
+
+	snowSysID := ""
+	snowNumber := ""
+	errorText := ""
+
+	if result, ok := resourceRespBody.(map[string]interface{})["result"]; ok {
+		if resultMap, ok := result.(map[string]interface{}); ok {
+			if sysID, ok := resultMap["sys_id"].(string); ok {
+				snowSysID = sysID
+			}
+			if number, ok := resultMap["number"].(string); ok {
+				snowNumber = number
+			}
+		}
+	}
+
+	// Check if there's an error field in the response
+	if errorField, ok := resourceRespBody.(map[string]interface{})["error"]; ok {
+		if errorStr, ok := errorField.(string); ok {
+			errorText = errorStr
+		} else {
+			if errorBytes, err := json.Marshal(errorField); err == nil {
+				errorText = string(errorBytes)
+			} else {
+				errorText = fmt.Sprintf("Error field present but could not be parsed: %v", errorField)
+			}
+		}
+
+		errMsg := fmt.Sprintf("failed to execute command: ServiceNow Error: %s", errorText)
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: errMsg})
+	}
+
+	h.logger.Info("updated ticket in ITSM", "ticket_id", snowSysID, "ticket_type", ticketType)
+
+	response := UpdateIncidentResponse{
+		TicketID:   snowSysID,
+		TicketType: ticketType,
+		Number:     snowNumber,
+	}
+
+	return fdk.Response{
+		Code: http.StatusOK,
+		Body: fdk.JSON(response),
+	}
+}
+
+// HandleUpdateIncident handles the /update_incident endpoint
+func (h *Handler) HandleUpdateIncident(ctx context.Context, r fdk.RequestOf[UpdateIncidentRequest], wrkCtx fdk.WorkflowCtx) fdk.Response {
+	return h.updateIncident(ctx, r, wrkCtx, pluginOpIDServiceNowUpdateIncident, "incident")
+}
+
+// HandleUpdateSIRIncident handles the /update_sir_incident endpoint
+func (h *Handler) HandleUpdateSIRIncident(ctx context.Context, r fdk.RequestOf[UpdateIncidentRequest], wrkCtx fdk.WorkflowCtx) fdk.Response {
+	return h.updateIncident(ctx, r, wrkCtx, pluginOpIDServiceNowUpdateSIRIncident, "sn_si_incident")
 }
 
 // handleThrottle handles the /throttle endpoint
