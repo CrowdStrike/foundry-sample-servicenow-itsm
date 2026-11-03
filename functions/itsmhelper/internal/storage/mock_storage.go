@@ -39,6 +39,14 @@ func (m *MockStorageService) PutObject(params *custom_storage.PutObjectParams, o
 	return nil, nil
 }
 
+func (m *MockStorageService) BatchGetObjects(params *custom_storage.BatchGetObjectsParams, opts ...custom_storage.ClientOption) (*custom_storage.BatchGetObjectsOK, *custom_storage.BatchGetObjectsMultiStatus, error) {
+	panic("not implemented")
+}
+
+func (m *MockStorageService) BatchGetObjectsByVersion(params *custom_storage.BatchGetObjectsByVersionParams, opts ...custom_storage.ClientOption) (*custom_storage.BatchGetObjectsByVersionOK, *custom_storage.BatchGetObjectsByVersionMultiStatus, error) {
+	panic("not implemented")
+}
+
 func (m *MockStorageService) DeleteObject(params *custom_storage.DeleteObjectParams, opts ...custom_storage.ClientOption) (*custom_storage.DeleteObjectOK, error) {
 	panic("not implemented")
 }
