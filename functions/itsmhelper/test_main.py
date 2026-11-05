@@ -466,6 +466,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.OK)
         self.assertTrue(response.body["exists"])
         self.assertEqual(response.body["ticket_id"], "existing-ticket-123")
+        self.assertEqual(response.body["ticket_number"], "")
         # Should not call API integration if ticket exists
         mock_api_integrations.execute_command.assert_not_called()
 
@@ -489,6 +490,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
                     "response_body": {
                         "result": {
                             "sys_id": "new-ticket-123",
+                            "number": "INC0010001",
                             "sys_class_name": "incident"
                         }
                     }
@@ -511,6 +513,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.CREATED)
         self.assertFalse(response.body["exists"])
         self.assertEqual(response.body["ticket_id"], "new-ticket-123")
+        self.assertEqual(response.body["ticket_number"], "INC0010001")
         self.assertEqual(response.body["ticket_type"], "incident")
 
         # Verify API integration was called
@@ -520,6 +523,83 @@ class TestCreateIncidentHandlers(unittest.TestCase):
 
         # Verify entity mapping was created
         mock_create_mapping.assert_called_once()
+
+    @patch('main.create_falcon_clients')
+    @patch('main.check_external_entity_exists')
+    @patch('main.create_or_update_external_entity_mapping')
+    def test_create_new_incident_null_number_and_class_name(self, mock_create_mapping, mock_check, mock_create_clients):
+        """ServiceNow returning null for number/sys_class_name should yield empty strings, not None."""
+        mock_logger = Mock()
+        mock_api_integrations = Mock()
+        mock_client = Mock()
+        mock_create_clients.return_value = (mock_api_integrations, mock_client)
+
+        mock_check.return_value = (False, None)
+
+        mock_api_integrations.execute_command.return_value = {
+            "status_code": 200,
+            "body": {
+                "resources": [{
+                    "response_body": {
+                        "result": {
+                            "sys_id": "new-ticket-789",
+                            "number": None,
+                            "sys_class_name": None
+                        }
+                    }
+                }]
+            }
+        }
+
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.body = {
+            "config_id": "config123",
+            "entity_id": "entity123",
+            "short_description": "Test incident",
+            "impact": "2",
+            "urgency": "2"
+        }
+
+        response = main.create_incident_handler(mock_request, None, mock_logger)
+
+        self.assertEqual(response.code, HTTPStatus.CREATED)
+        self.assertEqual(response.body["ticket_id"], "new-ticket-789")
+        self.assertEqual(response.body["ticket_number"], "")
+        self.assertEqual(response.body["ticket_type"], "")
+
+    @patch('main.create_falcon_clients')
+    @patch('main.check_external_entity_exists')
+    @patch('main.create_or_update_external_entity_mapping')
+    def test_create_new_incident_null_sys_id(self, mock_create_mapping, mock_check, mock_create_clients):
+        """ServiceNow returning sys_id: null should yield an empty ticket_id and skip the mapping."""
+        mock_api_integrations = Mock()
+        mock_create_clients.return_value = (mock_api_integrations, Mock())
+        mock_check.return_value = (False, None)
+        mock_api_integrations.execute_command.return_value = {
+            "status_code": 200,
+            "body": {
+                "resources": [{
+                    "response_body": {
+                        "result": {"sys_id": None, "number": "INC0010003", "sys_class_name": "incident"}
+                    }
+                }]
+            }
+        }
+
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.body = {
+            "config_id": "config123",
+            "entity_id": "entity123",
+            "short_description": "Test incident"
+        }
+
+        response = main.create_incident_handler(mock_request, None, Mock())
+
+        self.assertEqual(response.code, HTTPStatus.CREATED)
+        self.assertEqual(response.body["ticket_id"], "")
+        mock_create_mapping.assert_not_called()
 
     @patch('main.create_falcon_clients')
     @patch('main.create_or_update_external_entity_mapping')
@@ -541,6 +621,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
                     "response_body": {
                         "result": {
                             "sys_id": "new-ticket-456",
+                            "number": "INC0010002",
                             "sys_class_name": "incident"
                         }
                     }
@@ -567,6 +648,7 @@ class TestCreateIncidentHandlers(unittest.TestCase):
         self.assertEqual(response.code, HTTPStatus.CREATED)
         self.assertFalse(response.body["exists"])
         self.assertEqual(response.body["ticket_id"], "new-ticket-456")
+        self.assertEqual(response.body["ticket_number"], "INC0010002")
         mock_api_integrations.execute_command.assert_called_once()
 
     @patch('main.create_falcon_clients')
