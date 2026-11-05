@@ -182,93 +182,99 @@ func (h *Handler) HandleCreateEntityMapping(ctx context.Context, r fdk.RequestOf
 	}
 }
 
-// buildRequestPayload creates the request payload from the incident request
-func buildRequestPayload(body CreateIncidentRequest) map[string]interface{} {
-	requestPayload := map[string]interface{}{
-		"short_description": body.ShortDescription,
+// incidentPayloadInput holds the ServiceNow fields shared by create and update incident requests.
+type incidentPayloadInput struct {
+	AssignmentGroup  string
+	Category         string
+	Description      string
+	Impact           string
+	Severity         string
+	ShortDescription string
+	State            string
+	Urgency          string
+	WorkNotes        string
+	CustomFields     string
+}
+
+// buildIncidentPayload creates the ServiceNow request payload from the given fields.
+// Non-empty fields are included; short_description is always included when
+// alwaysIncludeShortDescription is set. Custom fields are flattened into the root.
+// An error is returned if custom_fields is not a valid JSON object.
+func buildIncidentPayload(f incidentPayloadInput, alwaysIncludeShortDescription bool) (map[string]interface{}, error) {
+	requestPayload := map[string]interface{}{}
+
+	if alwaysIncludeShortDescription || f.ShortDescription != "" {
+		requestPayload["short_description"] = f.ShortDescription
+	}
+	if f.AssignmentGroup != "" {
+		requestPayload["assignment_group"] = f.AssignmentGroup
+	}
+	if f.Category != "" {
+		requestPayload["category"] = f.Category
+	}
+	if f.Description != "" {
+		requestPayload["description"] = f.Description
+	}
+	if f.Impact != "" {
+		requestPayload["impact"] = f.Impact
+	}
+	if f.Severity != "" {
+		requestPayload["severity"] = f.Severity
+	}
+	if f.State != "" {
+		requestPayload["state"] = f.State
+	}
+	if f.Urgency != "" {
+		requestPayload["urgency"] = f.Urgency
+	}
+	if f.WorkNotes != "" {
+		requestPayload["work_notes"] = f.WorkNotes
 	}
 
-	// Add optional fields if they are provided
-	if body.AssignmentGroup != "" {
-		requestPayload["assignment_group"] = body.AssignmentGroup
-	}
-	if body.Category != "" {
-		requestPayload["category"] = body.Category
-	}
-	if body.Description != "" {
-		requestPayload["description"] = body.Description
-	}
-	if body.Impact != "" {
-		requestPayload["impact"] = body.Impact
-	}
-	if body.Severity != "" {
-		requestPayload["severity"] = body.Severity
-	}
-	if body.State != "" {
-		requestPayload["state"] = body.State
-	}
-	if body.Urgency != "" {
-		requestPayload["urgency"] = body.Urgency
-	}
-	if body.WorkNotes != "" {
-		requestPayload["work_notes"] = body.WorkNotes
-	}
-
-	if body.CustomFields != "" {
+	if f.CustomFields != "" {
 		var customFields map[string]interface{}
-		if err := json.Unmarshal([]byte(body.CustomFields), &customFields); err == nil {
-			for key, value := range customFields {
-				requestPayload[key] = value
-			}
+		if err := json.Unmarshal([]byte(f.CustomFields), &customFields); err != nil {
+			return nil, fmt.Errorf("custom_fields must be a valid JSON object: %w", err)
+		}
+		for key, value := range customFields {
+			requestPayload[key] = value
 		}
 	}
 
-	return requestPayload
+	return requestPayload, nil
+}
+
+// buildRequestPayload creates the request payload from the create incident request
+func buildRequestPayload(body CreateIncidentRequest) (map[string]interface{}, error) {
+	return buildIncidentPayload(incidentPayloadInput{
+		AssignmentGroup:  body.AssignmentGroup,
+		Category:         body.Category,
+		Description:      body.Description,
+		Impact:           body.Impact,
+		Severity:         body.Severity,
+		ShortDescription: body.ShortDescription,
+		State:            body.State,
+		Urgency:          body.Urgency,
+		WorkNotes:        body.WorkNotes,
+		CustomFields:     body.CustomFields,
+	}, true)
 }
 
 // buildUpdateRequestPayload creates the request payload from the update incident request.
 // Unlike buildRequestPayload, all fields are optional - only non-empty fields are included.
-func buildUpdateRequestPayload(body UpdateIncidentRequest) map[string]interface{} {
-	requestPayload := map[string]interface{}{}
-
-	if body.ShortDescription != "" {
-		requestPayload["short_description"] = body.ShortDescription
-	}
-	if body.AssignmentGroup != "" {
-		requestPayload["assignment_group"] = body.AssignmentGroup
-	}
-	if body.Category != "" {
-		requestPayload["category"] = body.Category
-	}
-	if body.Description != "" {
-		requestPayload["description"] = body.Description
-	}
-	if body.Impact != "" {
-		requestPayload["impact"] = body.Impact
-	}
-	if body.Severity != "" {
-		requestPayload["severity"] = body.Severity
-	}
-	if body.State != "" {
-		requestPayload["state"] = body.State
-	}
-	if body.Urgency != "" {
-		requestPayload["urgency"] = body.Urgency
-	}
-	if body.WorkNotes != "" {
-		requestPayload["work_notes"] = body.WorkNotes
-	}
-
-	if body.CustomFields != "" {
-		var customFields map[string]interface{}
-		if err := json.Unmarshal([]byte(body.CustomFields), &customFields); err == nil {
-			for key, value := range customFields {
-				requestPayload[key] = value
-			}
-		}
-	}
-
-	return requestPayload
+func buildUpdateRequestPayload(body UpdateIncidentRequest) (map[string]interface{}, error) {
+	return buildIncidentPayload(incidentPayloadInput{
+		AssignmentGroup:  body.AssignmentGroup,
+		Category:         body.Category,
+		Description:      body.Description,
+		Impact:           body.Impact,
+		Severity:         body.Severity,
+		ShortDescription: body.ShortDescription,
+		State:            body.State,
+		Urgency:          body.Urgency,
+		WorkNotes:        body.WorkNotes,
+		CustomFields:     body.CustomFields,
+	}, false)
 }
 
 // createIncident handles the common logic for creating both regular and SIR incidents
@@ -312,7 +318,10 @@ func (h *Handler) createIncident(
 
 	// If no existing ticket, proceed with creating a new one
 	// Prepare the request payload using the input parameters
-	requestPayload := buildRequestPayload(r.Body)
+	requestPayload, err := buildRequestPayload(r.Body)
+	if err != nil {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusBadRequest, Message: err.Error()})
+	}
 
 	configID := r.Body.ConfigID
 	execCmdParams := &api_integrations.ExecuteCommandParams{
@@ -350,13 +359,16 @@ func (h *Handler) createIncident(
 	}
 
 	resource := resources[0]
-	resourceRespBody := resource.ResponseBody
+	respMap, ok := resource.ResponseBody.(map[string]interface{})
+	if !ok {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: "unexpected response format from ServiceNow"})
+	}
 
 	snowSysClassName := ""
 	snowSysID := ""
 	errorText := ""
 
-	if result, ok := resourceRespBody.(map[string]interface{})["result"]; ok {
+	if result, ok := respMap["result"]; ok {
 		if resultMap, ok := result.(map[string]interface{}); ok {
 			// Try to get sys_class_name
 			if sysClassName, ok := resultMap["sys_class_name"].(string); ok {
@@ -371,7 +383,7 @@ func (h *Handler) createIncident(
 	}
 
 	// Check if there's an error field in the response
-	if errorField, ok := resourceRespBody.(map[string]interface{})["error"]; ok {
+	if errorField, ok := respMap["error"]; ok {
 		// Convert the error field to a string
 		if errorStr, ok := errorField.(string); ok {
 			errorText = errorStr
@@ -438,6 +450,11 @@ func (h *Handler) updateIncident(
 	ticketType string,
 ) fdk.Response {
 	h.logger.Info("Updating incident", "type", ticketType, "trace_id", r.TraceID, "wrk_ctx", wrkCtx)
+
+	if r.Body.ConfigID == "" || r.Body.SysID == "" {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusBadRequest, Message: "missing required fields: config_id, sys_id"})
+	}
+
 	accessToken := r.AccessToken
 
 	falconClient, cloud, err := h.falconClientFunc(accessToken, h.logger)
@@ -448,7 +465,10 @@ func (h *Handler) updateIncident(
 	_ = cloud
 
 	// Build the update payload, flattening any custom fields into the root
-	requestPayload := buildUpdateRequestPayload(r.Body)
+	requestPayload, err := buildUpdateRequestPayload(r.Body)
+	if err != nil {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusBadRequest, Message: err.Error()})
+	}
 
 	configID := r.Body.ConfigID
 	execCmdParams := &api_integrations.ExecuteCommandParams{
@@ -489,13 +509,16 @@ func (h *Handler) updateIncident(
 	}
 
 	resource := resources[0]
-	resourceRespBody := resource.ResponseBody
+	respMap, ok := resource.ResponseBody.(map[string]interface{})
+	if !ok {
+		return fdk.ErrResp(fdk.APIError{Code: http.StatusInternalServerError, Message: "unexpected response format from ServiceNow"})
+	}
 
 	snowSysID := ""
 	snowNumber := ""
 	errorText := ""
 
-	if result, ok := resourceRespBody.(map[string]interface{})["result"]; ok {
+	if result, ok := respMap["result"]; ok {
 		if resultMap, ok := result.(map[string]interface{}); ok {
 			if sysID, ok := resultMap["sys_id"].(string); ok {
 				snowSysID = sysID
@@ -507,7 +530,7 @@ func (h *Handler) updateIncident(
 	}
 
 	// Check if there's an error field in the response
-	if errorField, ok := resourceRespBody.(map[string]interface{})["error"]; ok {
+	if errorField, ok := respMap["error"]; ok {
 		if errorStr, ok := errorField.(string); ok {
 			errorText = errorStr
 		} else {

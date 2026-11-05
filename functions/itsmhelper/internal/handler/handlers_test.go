@@ -17,6 +17,7 @@ import (
 	"github.com/crowdstrike/gofalcon/falcon/client/custom_storage"
 	"github.com/crowdstrike/gofalcon/falcon/models"
 	"github.com/go-openapi/runtime"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -1207,6 +1208,75 @@ func (s *HandlerTestSuite) TestHandleCreateIncident() {
 				},
 			},
 		},
+		{
+			name: "Invalid custom_fields returns 400",
+			request: fdk.RequestOf[CreateIncidentRequest]{
+				Body: CreateIncidentRequest{
+					EntityID:         "entity123",
+					ShortDescription: "Test incident",
+					CustomFields:     "{invalid json}",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockStore: func(mockStorage *storage.MockStorageService) {
+				mockStorage.GetObjectFunc = func(params *custom_storage.GetObjectParams, writer io.Writer, opts ...custom_storage.ClientOption) (*custom_storage.GetObjectOK, error) {
+					return nil, fmt.Errorf("status 404")
+				}
+			},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return nil, fmt.Errorf("ServiceNow must not be called when custom_fields is invalid")
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 400,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    400,
+					Message: "custom_fields must be a valid JSON object: invalid character 'i' looking for beginning of object key string",
+				},
+			},
+		},
+		{
+			name: "Non-map response body returns 500",
+			request: fdk.RequestOf[CreateIncidentRequest]{
+				Body: CreateIncidentRequest{
+					EntityID:         "entity123",
+					ShortDescription: "Test incident",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockStore: func(mockStorage *storage.MockStorageService) {
+				mockStorage.GetObjectFunc = func(params *custom_storage.GetObjectParams, writer io.Writer, opts ...custom_storage.ClientOption) (*custom_storage.GetObjectOK, error) {
+					return nil, fmt.Errorf("status 404")
+				}
+			},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: "unexpected string response"},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "unexpected response format from ServiceNow",
+				},
+			},
+		},
 	}
 
 	// Run test cases
@@ -1941,6 +2011,107 @@ func (s *HandlerTestSuite) TestHandleUpdateIncident() {
 				},
 			},
 		},
+		{
+			name: "Missing config_id returns 400",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					SysID: "ticket123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx:              fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 400,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    400,
+					Message: "missing required fields: config_id, sys_id",
+				},
+			},
+		},
+		{
+			name: "Missing sys_id returns 400",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx:              fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 400,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    400,
+					Message: "missing required fields: config_id, sys_id",
+				},
+			},
+		},
+		{
+			name: "Invalid custom_fields returns 400",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID:     "config123",
+					SysID:        "ticket123",
+					CustomFields: "{invalid json}",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return nil, fmt.Errorf("ServiceNow must not be called when custom_fields is invalid")
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 400,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    400,
+					Message: "custom_fields must be a valid JSON object: invalid character 'i' looking for beginning of object key string",
+				},
+			},
+		},
+		{
+			name: "Non-map response body returns 500",
+			request: fdk.RequestOf[UpdateIncidentRequest]{
+				Body: UpdateIncidentRequest{
+					ConfigID: "config123",
+					SysID:    "ticket123",
+				},
+				AccessToken: "test-token",
+			},
+			workflowCtx: fdk.WorkflowCtx{},
+			setupMockAPIIntegrations: func(mockAPIIntegrations *MockAPIIntegrationsService) {
+				mockAPIIntegrations.ExecuteCommandFunc = func(params *api_integrations.ExecuteCommandParams, opts ...api_integrations.ClientOption) (*api_integrations.ExecuteCommandOK, error) {
+					return &api_integrations.ExecuteCommandOK{
+						Payload: &models.DomainExecuteCommandResultsV1{
+							Resources: []*models.DomainExecuteCommandResultV1{
+								{ResponseBody: "unexpected string response"},
+							},
+						},
+					}, nil
+				}
+			},
+			setupMockClient: func() (*client.CrowdStrikeAPISpecification, string, error) {
+				return &client.CrowdStrikeAPISpecification{}, "us-1", nil
+			},
+			wantCode: 500,
+			wantErrors: []fdk.APIError{
+				{
+					Code:    500,
+					Message: "unexpected response format from ServiceNow",
+				},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -2290,4 +2461,21 @@ func (s *HandlerTestSuite) TestExecuteCommandPayloadJSON() {
 // TestHandlerSuite runs the handler test suite
 func TestHandlerSuite(t *testing.T) {
 	suite.Run(t, new(HandlerTestSuite))
+}
+
+// TestBuildPayloadsRejectInvalidCustomFields verifies malformed custom_fields is rejected rather than dropped
+func TestBuildPayloadsRejectInvalidCustomFields(t *testing.T) {
+	for _, customFields := range []string{"{invalid json}", "[1, 2]", `"text"`} {
+		t.Run("create "+customFields, func(t *testing.T) {
+			payload, err := buildRequestPayload(CreateIncidentRequest{ShortDescription: "Test", CustomFields: customFields})
+			assert.Error(t, err)
+			assert.Nil(t, payload)
+		})
+
+		t.Run("update "+customFields, func(t *testing.T) {
+			payload, err := buildUpdateRequestPayload(UpdateIncidentRequest{State: "2", CustomFields: customFields})
+			assert.Error(t, err)
+			assert.Nil(t, payload)
+		})
+	}
 }

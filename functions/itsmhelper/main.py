@@ -327,32 +327,11 @@ def build_request_payload(body: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         Request payload dictionary
+
+    Raises:
+        ValueError: If custom_fields is not a valid JSON object
     """
-    request_payload = {
-        "short_description": body.get("short_description", "")
-    }
-
-    # Add optional fields if provided
-    optional_fields = [
-        "assignment_group", "category", "description", "impact",
-        "severity", "state", "urgency", "work_notes"
-    ]
-
-    for field in optional_fields:
-        if body.get(field):
-            request_payload[field] = body[field]
-
-    # Handle custom fields
-    custom_fields_str = body.get("custom_fields")
-    if custom_fields_str:
-        try:
-            custom_fields = json.loads(custom_fields_str) if isinstance(custom_fields_str, str) else custom_fields_str
-            request_payload.update(custom_fields)
-        except json.JSONDecodeError:
-            # Log but don't fail - custom fields are optional
-            pass
-
-    return request_payload
+    return _build_incident_payload(body, require_short_description=True)
 
 
 def build_update_request_payload(body: Dict[str, Any]) -> Dict[str, Any]:
@@ -367,27 +346,37 @@ def build_update_request_payload(body: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         Request payload dictionary
+
+    Raises:
+        ValueError: If custom_fields is not a valid JSON object
     """
+    return _build_incident_payload(body, require_short_description=False)
+
+
+def _build_incident_payload(body: Dict[str, Any], require_short_description: bool) -> Dict[str, Any]:
     request_payload: Dict[str, Any] = {}
 
+    if require_short_description or body.get("short_description"):
+        request_payload["short_description"] = body.get("short_description", "")
+
     optional_fields = [
-        "short_description", "assignment_group", "category", "description",
-        "impact", "severity", "state", "urgency", "work_notes"
+        "assignment_group", "category", "description", "impact",
+        "severity", "state", "urgency", "work_notes"
     ]
 
     for field in optional_fields:
         if body.get(field):
             request_payload[field] = body[field]
 
-    # Handle custom fields
     custom_fields_str = body.get("custom_fields")
     if custom_fields_str:
         try:
             custom_fields = json.loads(custom_fields_str) if isinstance(custom_fields_str, str) else custom_fields_str
-            request_payload.update(custom_fields)
-        except json.JSONDecodeError:
-            # Log but don't fail - custom fields are optional
-            pass
+        except json.JSONDecodeError as e:
+            raise ValueError(f"custom_fields is not valid JSON: {e}") from e
+        if not isinstance(custom_fields, dict):
+            raise ValueError("custom_fields must be a JSON object")
+        request_payload.update(custom_fields)
 
     return request_payload
 
@@ -561,7 +550,16 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
             )
 
         # Build request payload
-        request_payload = build_request_payload(body)
+        try:
+            request_payload = build_request_payload(body)
+        except ValueError as e:
+            return Response(
+                code=HTTPStatus.BAD_REQUEST,
+                errors=[APIError(
+                    code=HTTPStatus.BAD_REQUEST,
+                    message=str(e)
+                )]
+            )
 
         # Execute API integration command
         command_body = {
@@ -733,7 +731,16 @@ def update_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
         api_integrations, _ = create_falcon_clients(logger)
 
         # Build the update payload, flattening any custom fields into the root
-        request_payload = build_update_request_payload(body)
+        try:
+            request_payload = build_update_request_payload(body)
+        except ValueError as e:
+            return Response(
+                code=HTTPStatus.BAD_REQUEST,
+                errors=[APIError(
+                    code=HTTPStatus.BAD_REQUEST,
+                    message=str(e)
+                )]
+            )
 
         # Execute API integration command. sys_id is passed as a path parameter.
         command_body = {

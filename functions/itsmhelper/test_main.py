@@ -698,9 +698,45 @@ class TestBuildUpdateRequestPayload(unittest.TestCase):
         self.assertEqual(result["custom_field1"], "value1")
         self.assertEqual(result["custom_field2"], "value2")
 
+    def test_invalid_custom_fields_json_raises(self):
+        for bad in ["{invalid json}", "[1, 2]", '"text"']:
+            with self.subTest(custom_fields=bad):
+                body = {"state": "2", "custom_fields": bad}
+                with self.assertRaises(ValueError) as ctx:
+                    main.build_update_request_payload(body)
+                self.assertIn("custom_fields", str(ctx.exception))
+
+
+class TestBuildRequestPayloadInvalidCustomFields(unittest.TestCase):
+    """Test build_request_payload rejection of malformed custom_fields"""
+
+    def test_invalid_custom_fields_json_raises(self):
+        for bad in ["{invalid json}", "[1, 2]", '"text"']:
+            with self.subTest(custom_fields=bad):
+                body = {"short_description": "Test", "custom_fields": bad}
+                with self.assertRaises(ValueError) as ctx:
+                    main.build_request_payload(body)
+                self.assertIn("custom_fields", str(ctx.exception))
+
 
 class TestUpdateIncidentHandlers(unittest.TestCase):
     """Test update_incident_handler and update_sir_incident_handler"""
+
+    def test_update_invalid_custom_fields_returns_400(self):
+        mock_logger = Mock()
+        mock_request = Mock()
+        mock_request.trace_id = "trace-123"
+        mock_request.context = None
+        mock_request.body = {
+            "config_id": "config123",
+            "sys_id": "ticket123",
+            "custom_fields": "{invalid json}",
+        }
+
+        response = main.update_incident_impl(mock_request, mock_logger, "op_id", "incident")
+
+        self.assertEqual(response.code, HTTPStatus.BAD_REQUEST)
+        self.assertIn("custom_fields", response.errors[0].message)
 
     @patch('main.create_falcon_clients')
     def test_update_incident_success(self, mock_create_clients):
