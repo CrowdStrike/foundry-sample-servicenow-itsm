@@ -111,6 +111,32 @@ functions:
           tags:
             - ServiceNow Foundry
         permissions: []
+      - name: ITSM Helper - Update Incident
+        description: Helper function that updates an incident in the ServiceNow ITSM system, including custom fields
+        method: POST
+        api_path: /update_incident
+        payload_type: ""
+        request_schema: schemas/update_incident_req_schema.json
+        response_schema: schemas/update_incident_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
+      - name: ITSM Helper - Update SIR Incident
+        description: Helper function that updates an SIR incident in the ServiceNow ITSM system, including custom fields
+        method: POST
+        api_path: /update_sir_incident
+        payload_type: ""
+        request_schema: schemas/update_sir_incident_req_schema.json
+        response_schema: schemas/update_sir_incident_resp_schema.json
+        workflow_integration:
+          disruptive: false
+          system_action: false
+          tags:
+            - ServiceNow Foundry
+        permissions: []
       - name: ITSM Helper - Throttle
         description: Helper function that throttles the flow of updates to downstream workflow nodes
         method: POST
