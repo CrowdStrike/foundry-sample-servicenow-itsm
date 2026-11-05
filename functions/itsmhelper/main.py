@@ -584,9 +584,9 @@ def create_incident_impl(  # pylint: disable=too-many-locals,too-many-return-sta
 
         # Extract ticket information
         result = response_body.get("result", {})
-        snow_sys_class_name = result.get("sys_class_name", "")
-        snow_sys_id = result.get("sys_id", "")
-        snow_number = result.get("number", "")
+        snow_sys_class_name = result.get("sys_class_name") or ""
+        snow_sys_id = result.get("sys_id") or ""
+        snow_number = result.get("number") or ""
 
         logger.info(f"Received response from ITSM - ticket_id: {snow_sys_id}, ticket_number: {snow_number}, ticket_type: {snow_sys_class_name}")
 
