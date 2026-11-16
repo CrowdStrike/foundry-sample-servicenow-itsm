@@ -11,6 +11,7 @@ updates:
   - package-ecosystem: "pip"
     directories:
       - "/functions/itsmhelper/"
+      - "/.github"
     schedule:
       interval: "weekly"
       day: "monday"
